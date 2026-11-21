@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel FSC – ASPAFEMP</title>
+<style>
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --ink:#1d2a22; --muted:#5d6b62; --line:#dcd9cf;
+  --accent:#1f6a45; --accent-soft:#e1efe5; --warn:#a15c00; --warn-soft:#fbefd9; --bad:#a32d2d; --bad-soft:#f8e1e1; --ok:#1f6a45; --info:#285f8f; --info-soft:#e0ecf6;
+  --water:#2b73b8; --shadow:0 1px 2px rgba(20,30,25,.06),0 4px 14px rgba(20,30,25,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121814; --surface:#1b231e; --ink:#e8efe9; --muted:#a2b0a7; --line:#2f3b34;
+    --accent:#6fcf97; --accent-soft:#1f3a2b; --warn:#f0b35a; --warn-soft:#3a2c12; --bad:#f08a8a; --bad-soft:#3d1f1f; --ok:#6fcf97; --info:#7fb6e8; --info-soft:#1c2f42;
+    --water:#6aaee8; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121814; --surface:#1b231e; --ink:#e8efe9; --muted:#a2b0a7; --line:#2f3b34;
+  --accent:#6fcf97; --accent-soft:#1f3a2b; --warn:#f0b35a; --warn-soft:#3a2c12; --bad:#f08a8a; --bad-soft:#3d1f1f; --ok:#6fcf97; --info:#7fb6e8; --info-soft:#1c2f42;
+  --water:#6aaee8; --shadow:none;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:16px}
+h1{font-size:24px;line-height:1.2;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+.chip.ok{background:var(--accent-soft);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.chip.bad{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.chip.info{background:var(--info-soft);color:var(--info);border-color:color-mix(in srgb,var(--info) 30%,transparent)}
+.chip.mute{background:transparent;color:var(--muted);border-color:var(--line)}
+.btn{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.kpi .v{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.kpi .l{color:var(--muted);font-size:13px;margin-top:4px}
+.kpi .n{font-size:12px;color:var(--muted);margin-top:6px}
+h2{font-size:17px;margin:0 0 4px}
+.hint{color:var(--muted);font-size:13px;margin:0 0 12px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.mapbox{position:relative}
+svg#mapa{width:100%;height:auto;display:block;border-radius:10px;background:color-mix(in srgb,var(--bg) 70%,var(--surface))}
+.lot{stroke:var(--ink);stroke-width:.0009;stroke-opacity:.8;cursor:pointer;transition:opacity .12s}
+.lot:hover{opacity:.85}
+.lot:focus{outline:none;stroke-width:.003;stroke:var(--accent)}
+.lot.sel{stroke-width:.0032;stroke:#e5484d}
+.lotlbl{font-size:.0095px;font-weight:700;fill:var(--ink);text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:var(--surface);stroke-width:.0022;stroke-linejoin:round}
+.hyd{fill:none;stroke:var(--water);stroke-width:.0006;stroke-linecap:round}
+.ctl{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;margin:10px 0 0;font-size:13px}
+.ctl label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+select{font:inherit;font-size:13px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:1px solid rgba(0,0,0,.15)}
+#tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:5px 8px;border-radius:6px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:3}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;margin:10px 0}
+.dl dt{color:var(--muted)} .dl dd{margin:0;font-variant-numeric:tabular-nums;text-align:right}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden;display:flex}
+.bar span{display:block;height:100%}
+.zrow{display:flex;justify-content:space-between;font-size:13px;gap:8px;margin-top:4px}
+.zrow b{font-variant-numeric:tabular-nums}
+.alerts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.alert{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--warn-soft);color:var(--ink);border-left:3px solid var(--warn)}
+.alert.info{background:var(--info-soft);border-left-color:var(--info)}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;cursor:pointer;white-space:nowrap}
+tr.row{cursor:pointer} tr.row:hover td{background:var(--accent-soft)} tr.row.sel td{background:var(--accent-soft);font-weight:600}
+.tscroll{overflow-x:auto}
+.sim{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+@media (max-width:760px){.sim{grid-template-columns:1fr}}
+.field{margin-bottom:14px}
+.field label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.field label b{font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.out{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.out div{background:var(--bg);border-radius:10px;padding:10px 12px}
+.out .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.out .l{font-size:12px;color:var(--muted)}
+.fsc{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+.pr{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
+.pr.done{border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 55%,var(--surface))}
+.pr h3{font-size:14px;margin:0 0 4px;display:flex;gap:8px;align-items:baseline;justify-content:space-between}
+.pr h3 span.n{color:var(--muted);font-weight:500;margin-right:6px}
+.pr p{margin:4px 0;font-size:13px}
+.pr .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:8px}
+.pr label.chk{display:flex;gap:7px;align-items:center;font-size:13px;margin-top:10px;cursor:pointer}
+.prog{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 14px}
+.prog span{display:block;height:100%;background:var(--accent);transition:width .2s}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;counter-reset:s}
+.step{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;background:var(--surface)}
+.step b{display:block;margin-bottom:2px}
+.step::before{counter-increment:s;content:counter(s);display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--bg);font-size:12px;font-weight:700;align-items:center;justify-content:center;margin-bottom:6px}
+ul.pend{margin:6px 0 0;padding-left:18px;font-size:13.5px} ul.pend li{margin:4px 0}
+footer{color:var(--muted);font-size:12px;margin-top:20px}
+section{margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>ASPAFEMP – Painel de certificação FSC</h1>
+    <div class="sub">Área destinada ao manejo florestal · Floresta Estadual de Maués (AM) · SIRGAS 2000 (EPSG:4674)</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <span class="chip">Triagem preliminar, sem validade de auditoria</span>
+    <button class="btn" id="tema" type="button">Tema</button>
+  </div>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<section class="grid2">
+  <div class="card">
+    <h2>Mapa dos lotes</h2>
+    <p class="hint">Clique em um lote (ou numa linha da tabela) para ver o detalhe. As zonas são as do zoneamento da Floresta Estadual de Maués.</p>
+    <div class="mapbox">
+      <svg id="mapa" role="img" aria-label="Mapa dos lotes da ASPAFEMP"></svg>
+      <div id="tip"></div>
+    </div>
+    <div class="ctl">
+      <label>Colorir por
+        <select id="modo">
+          <option value="area">Área do lote</option>
+          <option value="app">APP estimada (% do lote)</option>
+          <option value="comp">Compacidade da forma</option>
+          <option value="zona">Zona dominante</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="chkZon" checked> Zoneamento</label>
+      <label><input type="checkbox" id="chkHid" checked> Hidrografia</label>
+      <label><input type="checkbox" id="chkLbl" checked> Rótulos</label>
+    </div>
+    <div class="legend" id="legenda"></div>
+  </div>
+  <div class="card" id="detalhe"></div>
+</section>
+
+<section class="card">
+  <h2>Lotes em números</h2>
+  <p class="hint">Clique no cabeçalho para ordenar. “Líquida” = área − APP estimada − infraestrutura (ajustável no simulador).</p>
+  <div class="tscroll"><table id="tabela"></table></div>
+</section>
+
+<section class="card">
+  <h2>Simulador de manejo</h2>
+  <p class="hint">Cenário de planejamento, não é estimativa de volume do inventário. Troque pelos números do PMFS quando existirem.</p>
+  <div class="sim">
+    <div>
+      <div class="field"><label>Ciclo de corte <b id="vCiclo"></b></label><input type="range" id="ciclo" min="25" max="35" step="1" value="30"></div>
+      <div class="field"><label>Intensidade de corte <b id="vInt"></b></label><input type="range" id="intens" min="10" max="30" step="1" value="20"></div>
+      <div class="field"><label>Infraestrutura (estradas, pátios, trilhas) <b id="vInfra"></b></label><input type="range" id="infra" min="0" max="10" step="0.5" value="4"></div>
+      <div class="field"><label>Reserva adicional de conservação / HCV <b id="vCons"></b></label><input type="range" id="cons" min="0" max="30" step="1" value="0"></div>
+      <p class="hint" style="margin-bottom:0">Faixas dos controles: ciclo de 25 a 35 anos e até 30 m³/ha, limites da IN MMA 5/2006 para PMFS de grande porte na Amazônia. Confira a norma vigente e a do órgão licenciador.</p>
+    </div>
+    <div>
+      <div class="out" id="saida"></div>
+      <div class="alerts" id="alertaSim"></div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Inventário florestal: etapas e implicações</h2>
+  <p class="hint">Inventário a 100% das árvores comerciais da UPA do ano, feito antes da colheita. Abra cada etapa para ver o que se faz e o que ela implica. Percentuais e diâmetros mínimos seguem a norma do órgão licenciador; confirme a versão vigente.</p>
+  <div class="sim" style="margin-bottom:14px">
+    <div>
+      <div class="field"><label>Árvores a inventariar por hectare (hipótese) <b id="vDens"></b></label><input type="range" id="dens" min="2" max="25" step="1" value="8"></div>
+      <p class="hint" style="margin-bottom:0">Use o valor do inventário amostral ou de um PMFS vizinho. A UPA anual vem do simulador acima.</p>
+    </div>
+    <div class="out" id="saidaInv"></div>
+  </div>
+  <div id="invSteps"></div>
+</section>
+
+<section class="card">
+  <h2>Caminho até o certificado</h2>
+  <p class="hint">Manejo florestal (FM) e cadeia de custódia (CoC) são certificados distintos. Quem vende madeira FSC precisa dos dois.</p>
+  <div class="steps">
+    <div class="step"><b>Pré-avaliação</b>Diagnóstico de lacunas contra os Princípios e Critérios e o padrão nacional FSC Brasil vigente.</div>
+    <div class="step"><b>Certificadora</b>Escolher organismo acreditado (ASI) e pedir proposta.</div>
+    <div class="step"><b>Auditoria principal</b>Documentos, campo e consulta a partes interessadas (comunidades, órgãos, ONGs).</div>
+    <div class="step"><b>Condições (CARs)</b>Não conformidades a corrigir em prazo definido.</div>
+    <div class="step"><b>Certificado</b>Validade de 5 anos, com auditorias de vigilância anuais.</div>
+    <div class="step"><b>Cadeia de custódia</b>FSC-STD-40-004 em cada elo, de DOF/SINAFLOR à venda.</div>
+  </div>
+  <p class="hint" style="margin-top:12px">Porte: a área de 20 mil hectares é muito maior que o teto de 1.000 ha das florestas de pequena escala e baixa intensidade (SLIMF). Entra como manejo de grande escala.</p>
+</section>
+
+<section class="card">
+  <h2>Os 10 Princípios FSC aplicados a esta área</h2>
+  <p class="hint">Princípios e Critérios FSC (FSC-STD-01-001, versão 5). Marque o que já tem documento na pasta do cliente; o progresso fica salvo neste navegador.</p>
+  <div style="display:flex;justify-content:space-between;font-size:13px"><span id="progTxt"></span><button class="btn" id="zerar" type="button">Zerar marcações</button></div>
+  <div class="prog"><span id="progBar" style="width:0"></span></div>
+  <div class="fsc" id="fsc"></div>
+</section>
+
+<section class="card">
+  <h2>Pendências e pontos de atenção</h2>
+  <ul class="pend" id="pend"></ul>
+</section>
+
+<footer>
+  Gerado em <span id="gerado"></span> a partir de AREA_CONTORNO_LOTES (10 feições), zoneamento e hidrografia da Floresta de Maués, CAR e CDRU 012/2022 SECT.
+  APP estimada = faixa de 30 m de cada lado dos cursos d’água de 0 a 10 m da hidrografia IBGE (Lei 12.651/2012, art. 4º), sem nascentes nem curso fora da base. É uma triagem; vale o levantamento de campo e o PMFS.
+</footer>
+</div>
+
+<script>
+const DATA = /*DATA*/;
+const CTX = {
+  uc:"Floresta Estadual de Maués", cdru:"CDRU 012/2022 SECT", comunidades20:13, comunidadeProx:5.1,
+  comunidades:[["São Sebastião do Pajurá",5.1],["Nova Jerusalém",5.1],["São João",5.4],["Varre Vento",5.6],["São José do Cicantá",6.3],["Base Parauari (CEUC)",6.5],["N. S. do Pingo de Ouro",7.3],["São Raimundo",10.3]],
+  flona:22.9, parna:57.0, gerado:"21/11/2026"
+};
+const ZCOR = {"Especial para adequação fundiária":"#b08968","Preservação":"#2f6f4e","Manejo Florestal":"#1f8a8a","Uso Extensivo":"#a9cf98","Uso Intensivo":"#e0b44c","Amortecimento":"#d9d0bf"};
+const f = (n,d=0)=>Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const $ = s=>document.querySelector(s);
+const L = DATA.lotes;
+
+/* ---------- métricas ---------- */
+L.forEach(l=>{
+  l.comp = 4*Math.PI*(l.area_ha*1e4)/Math.pow(l.perim_m,2);
+  l.appPct = l.app_ha/l.area_ha*100;
+  const zs = Object.entries(l.zonas).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const tot = zs.reduce((s,[,v])=>s+v,0);
+  l.zlist = zs.map(([z,v])=>[z,v/tot*100]);
+  l.zdom = zs[0][0];
+});
+const EXT_PCT = L.reduce((s,l)=>s+l.area_ha*(l.zlist.find(z=>z[0]==="Uso Extensivo")?.[1]||0)/100,0)/L.reduce((s,l)=>s+l.area_ha,0)*100;
+const TOT = L.reduce((s,l)=>s+l.area_ha,0);
+const TOT_APP = L.reduce((s,l)=>s+l.app_ha,0);
+const TOT_HID = L.reduce((s,l)=>s+l.hidro_km,0);
+let sel = null, sortKey="lote", sortDir=1;
+
+/* ---------- KPIs ---------- */
+function kpis(){
+  const ext = L.reduce((s,l)=>s+l.area_ha*(l.zlist.find(z=>z[0]==="Uso Extensivo")?.[1]||0)/100,0);
+  const items = [
+    [f(TOT,0)+" ha","Área total dos 10 lotes","Soma dos atributos, conferida pela área elipsoidal"],
+    [L.length,"Lotes","Do "+L[0].lote+" ao "+L[L.length-1].lote+", com lacunas (ver pendências)"],
+    [f(TOT_APP,0)+" ha","APP estimada ("+f(TOT_APP/TOT*100,1)+"%)",f(TOT_HID,0)+" km de cursos d’água nos lotes"],
+    [f(ext/TOT*100,1)+"%","Em zona de Uso Extensivo","Nenhum lote está em zona de Manejo Florestal"],
+    [f(CTX.comunidades20,0),"Comunidades a até 20 km","A mais próxima a "+f(CTX.comunidadeProx,1)+" km"]
+  ];
+  $("#kpis").innerHTML = items.map(i=>`<div class="card kpi"><div class="v">${i[0]}</div><div class="l">${i[1]}</div><div class="n">${i[2]}</div></div>`).join("");
+}
+
+/* ---------- mapa ---------- */
+const lat0 = -3.9, kx = Math.cos(lat0*Math.PI/180);
+const px = lon=>lon*kx, py = lat=>-lat;
+const b = DATA.bbox, m=.045;
+const VB = [px(b[0])-m, py(b[3])-m, (px(b[2])-px(b[0]))+2*m, (py(b[1])-py(b[3]))+2*m];
+function ringPath(r){return "M"+r.map(c=>px(c[0]).toFixed(5)+","+py(c[1]).toFixed(5)).join("L")+"Z"}
+function geomPath(g){
+  if(g.type==="Polygon") return g.coordinates.map(ringPath).join("");
+  if(g.type==="MultiPolygon") return g.coordinates.map(p=>p.map(ringPath).join("")).join("");
+  if(g.type==="LineString") return "M"+g.coordinates.map(c=>px(c[0]).toFixed(5)+","+py(c[1]).toFixed(5)).join("L");
+  if(g.type==="MultiLineString") return g.coordinates.map(l=>"M"+l.map(c=>px(c[0]).toFixed(5)+","+py(c[1]).toFixed(5)).join("L")).join("");
+  if(g.type==="GeometryCollection") return g.geometries.map(geomPath).join("");
+  return "";
+}
+function lerp(a,b,t){return a.map((v,i)=>Math.round(v+(b[i]-v)*t))}
+function scale(t){const c=lerp([226,240,226],[24,100,66],Math.max(0,Math.min(1,t)));return `rgb(${c})`}
+function metric(l){
+  const mo=$("#modo").value;
+  if(mo==="area")return l.area_ha; if(mo==="app")return l.appPct; if(mo==="comp")return l.comp; return 0;
+}
+function colorFor(l){
+  const mo=$("#modo").value;
+  if(mo==="zona")return ZCOR[l.zdom]||"#999";
+  const vals=L.map(metric), lo=Math.min(...vals), hi=Math.max(...vals);
+  return scale(hi===lo?.5:(metric(l)-lo)/(hi-lo));
+}
+function drawMap(){
+  const svg=$("#mapa"); svg.setAttribute("viewBox",VB.join(" "));
+  let s="";
+  if($("#chkZon").checked) s+=DATA.zoneamento.map(z=>`<path d="${geomPath(z.geom)}" fill="${ZCOR[z.zona]||"#ccc"}" fill-opacity=".55" stroke="none"/>`).join("");
+  s+=L.map(l=>`<path class="lot${sel===l.lote?" sel":""}" data-l="${l.lote}" tabindex="0" role="button" aria-label="${l.nome}, ${f(l.area_ha,0)} hectares" d="${ringPath(l.ring)}" fill="${colorFor(l)}" fill-opacity="${$("#chkZon").checked?.72:.92}"/>`).join("");
+  if($("#chkHid").checked) s+=DATA.hidro.map(h=>`<path class="hyd" d="${geomPath(h.geom)}"/>`).join("");
+  if($("#chkLbl").checked) s+=L.map(l=>`<text class="lotlbl" x="${px(l.centroide[0])}" y="${py(l.centroide[1])+.003}">${l.lote}</text>`).join("");
+  svg.innerHTML=s;
+  svg.querySelectorAll(".lot").forEach(p=>{
+    p.addEventListener("click",()=>select(p.dataset.l));
+    p.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(p.dataset.l)}});
+    p.addEventListener("mousemove",e=>tip(e,p.dataset.l));
+    p.addEventListener("mouseleave",()=>$("#tip").style.opacity=0);
+  });
+  legend();
+}
+function tip(e,id){
+  const l=L.find(x=>x.lote===id), t=$("#tip"), r=$(".mapbox").getBoundingClientRect();
+  t.innerHTML=`<b>${l.nome}</b> · ${f(l.area_ha,0)} ha · APP ${f(l.appPct,1)}%`;
+  t.style.left=(e.clientX-r.left+12)+"px"; t.style.top=(e.clientY-r.top+12)+"px"; t.style.opacity=1;
+}
+function legend(){
+  const mo=$("#modo").value, el=$("#legenda"); let h="";
+  if(mo==="zona"){
+    const used=[...new Set(L.map(l=>l.zdom))];
+    h=used.map(z=>`<span><i style="background:${ZCOR[z]}"></i>${z} (cor do lote)</span>`).join("");
+  } else {
+    const vals=L.map(metric), lo=Math.min(...vals), hi=Math.max(...vals);
+    const u={area:" ha",app:"%",comp:""}[mo], d={area:0,app:1,comp:2}[mo];
+    h=`<span><i style="background:${scale(0)}"></i>${f(lo,d)}${u}</span><span><i style="background:${scale(.5)}"></i>${f((lo+hi)/2,d)}${u}</span><span><i style="background:${scale(1)}"></i>${f(hi,d)}${u}</span>`;
+  }
+  if($("#chkZon").checked){
+    h+=`<span style="flex-basis:100%"></span>`+Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
+  }
+  if($("#chkHid").checked) h+=`<span><i style="background:var(--water);height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`;
+  el.innerHTML=h;
+}
+
+/* ---------- detalhe ---------- */
+function infraPct(){return +$("#infra").value}
+function detalhe(){
+  const el=$("#detalhe");
+  if(!sel){
+    el.innerHTML=`<h2>Visão geral</h2><p class="hint">Selecione um lote no mapa.</p>
+      <dl class="dl"><dt>Área total</dt><dd>${f(TOT,2)} ha</dd><dt>Área média por lote</dt><dd>${f(TOT/L.length,0)} ha</dd>
+      <dt>Maior / menor lote</dt><dd>${f(Math.max(...L.map(l=>l.area_ha)),0)} / ${f(Math.min(...L.map(l=>l.area_ha)),0)} ha</dd>
+      <dt>Cursos d’água</dt><dd>${f(TOT_HID,1)} km</dd><dt>APP estimada</dt><dd>${f(TOT_APP,0)} ha</dd></dl>
+      <div class="alerts">
+        <div class="alert info"><b>Contexto legal:</b> os lotes estão dentro da ${CTX.uc}, unidade de conservação de uso sustentável, sob a ${CTX.cdru}.</div>
+        <div class="alert"><b>Atenção:</b> o zoneamento coloca os lotes em Uso Extensivo, não em Manejo Florestal. Confirmar no plano de gestão da UC se o manejo madeireiro é permitido nessa zona.</div>
+      </div>`;
+    return;
+  }
+  const l=L.find(x=>x.lote===sel), liq=l.area_ha-l.app_ha-l.area_ha*infraPct()/100;
+  const al=[];
+  const pres=l.zlist.find(z=>z[0]==="Preservação"), man=l.zlist.find(z=>z[0]==="Manejo Florestal");
+  if(l.zdom!=="Manejo Florestal") al.push(["Zona dominante: "+l.zdom+". Verificar se o manejo é permitido.",0]);
+  if(pres&&pres[1]>=.1) al.push(["Parte do lote ("+f(pres[1]/100*l.area_ha,1)+" ha) cai em zona de Preservação. Excluir do plano de corte.",0]);
+  if(l.comp<.3) al.push(["Forma alongada (compacidade "+f(l.comp,2)+"). Perímetro de "+f(l.perim_m/1000,1)+" km para "+f(l.area_ha,0)+" ha: mais borda, estrada e acesso mais difícil.",0]);
+  if(l.appPct>5.5) al.push(["APP acima da média ("+f(l.appPct,1)+"% contra "+f(TOT_APP/TOT*100,1)+"%).",1]);
+  if(!al.length) al.push(["Sem alerta geométrico ou de zoneamento neste lote.",1]);
+  el.innerHTML=`<h2>${l.nome}</h2><p class="hint">${l.vertices} vértices · centroide ${f(l.centroide[1],4)}, ${f(l.centroide[0],4)}</p>
+   <dl class="dl"><dt>Área</dt><dd>${f(l.area_ha,2)} ha</dd><dt>Perímetro</dt><dd>${f(l.perim_m/1000,2)} km</dd>
+   <dt>Cursos d’água</dt><dd>${f(l.hidro_km,1)} km</dd><dt>APP estimada</dt><dd>${f(l.app_ha,1)} ha (${f(l.appPct,1)}%)</dd>
+   <dt>Líquida (infra. ${f(infraPct(),1)}%)</dt><dd>${f(liq,0)} ha</dd><dt>Compacidade</dt><dd>${f(l.comp,2)}</dd></dl>
+   <div class="k" style="font-size:12px;color:var(--muted)">Zonas do zoneamento</div>
+   <div class="bar" style="margin-top:6px">${l.zlist.map(z=>`<span title="${z[0]}" style="width:${z[1]}%;background:${ZCOR[z[0]]||"#999"}"></span>`).join("")}</div>
+   ${l.zlist.map(z=>`<div class="zrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${ZCOR[z[0]]||"#999"};margin-right:6px"></i>${z[0]}</span><b>${f(z[1],z[1]<1?2:1)}%</b></div>`).join("")}
+   <div class="alerts">${al.map(a=>`<div class="alert${a[1]?" info":""}">${a[0]}</div>`).join("")}</div>
+   <div style="margin-top:12px"><button class="btn" id="limpar" type="button">Voltar à visão geral</button></div>`;
+  $("#limpar").onclick=()=>select(null);
+}
+function select(id){sel=(id===sel?null:id);drawMap();detalhe();tabela()}
+
+/* ---------- tabela ---------- */
+function tabela(){
+  const infra=infraPct()/100;
+  const rows=L.map(l=>({...l,liq:l.area_ha-l.app_ha-l.area_ha*infra}));
+  const cols=[["lote","Lote"],["area_ha","Área (ha)"],["app_ha","APP (ha)"],["liq","Líquida (ha)"],["hidro_km","Hidro. (km)"],["comp","Compac."],["zdom","Zona dominante"]];
+  rows.sort((a,b)=>(typeof a[sortKey]==="string"?a[sortKey].localeCompare(b[sortKey]):a[sortKey]-b[sortKey])*sortDir);
+  $("#tabela").innerHTML="<thead><tr>"+cols.map(c=>`<th data-k="${c[0]}">${c[1]}${sortKey===c[0]?(sortDir>0?" ▲":" ▼"):""}</th>`).join("")+"</tr></thead><tbody>"+
+    rows.map(r=>`<tr class="row${sel===r.lote?" sel":""}" data-l="${r.lote}"><td>${r.nome}</td><td>${f(r.area_ha,2)}</td><td>${f(r.app_ha,1)}</td><td>${f(r.liq,0)}</td><td>${f(r.hidro_km,1)}</td><td>${f(r.comp,2)}</td><td style="text-align:right">${r.zdom}</td></tr>`).join("")+
+    `<tr><td><b>Total</b></td><td><b>${f(TOT,2)}</b></td><td><b>${f(TOT_APP,1)}</b></td><td><b>${f(rows.reduce((s,r)=>s+r.liq,0),0)}</b></td><td><b>${f(TOT_HID,1)}</b></td><td></td><td></td></tr></tbody>`;
+  $("#tabela").querySelectorAll("th").forEach(t=>t.onclick=()=>{const k=t.dataset.k;sortDir=(sortKey===k?-sortDir:1);sortKey=k;tabela()});
+  $("#tabela").querySelectorAll("tr.row").forEach(t=>t.onclick=()=>select(t.dataset.l));
+}
+
+/* ---------- simulador ---------- */
+function sim(){
+  const ciclo=+$("#ciclo").value, it=+$("#intens").value, infra=+$("#infra").value, cons=+$("#cons").value;
+  $("#vCiclo").textContent=ciclo+" anos"; $("#vInt").textContent=it+" m³/ha"; $("#vInfra").textContent=f(infra,1)+"%"; $("#vCons").textContent=cons+"%";
+  const prod=TOT-TOT_APP-TOT*infra/100-TOT*cons/100;
+  const upa=prod/ciclo, vanual=upa*it;
+  $("#saida").innerHTML=[
+    [f(prod,0)+" ha","Área produtiva líquida ("+f(prod/TOT*100,1)+"% do total)"],
+    [f(upa,0)+" ha/ano","Área de colheita anual (UPA)"],
+    [f(vanual,0)+" m³/ano","Volume anual autorizável no cenário"],
+    [f(vanual*ciclo,0)+" m³","Volume em um ciclo de "+ciclo+" anos"],
+    [f(TOT*cons/100,0)+" ha","Reserva adicional fora do corte"],
+    [f(it/ciclo,2)+" m³/ha/ano","Taxa média de colheita"]
+  ].map(o=>`<div><div class="v">${o[0]}</div><div class="l">${o[1]}</div></div>`).join("");
+  const a=[];
+  a.push(["A taxa de colheita ("+f(it/ciclo,2)+" m³/ha/ano) precisa ficar abaixo do incremento medido nas parcelas permanentes. O FSC cobra essa comparação (P5 e P8). Sem esse dado, o cenário é só aritmética.",1]);
+  if(it>=28) a.push(["Intensidade perto do teto legal de 30 m³/ha. Em auditoria FSC, intensidades altas pedem justificativa e monitoramento forte.",0]);
+  if(cons===0) a.push(["Reserva adicional em 0%. O FSC pede áreas de conservação representativas (P6) e proteção de HCV (P9) além da APP. Defina o percentual com a avaliação de campo.",0]);
+  $("#alertaSim").innerHTML=a.map(x=>`<div class="alert${x[1]?" info":""}">${x[0]}</div>`).join("");
+  SIM.upa=upa; SIM.ciclo=ciclo; inv();
+  detalhe(); tabela();
+}
+const SIM={upa:0,ciclo:30};
+
+/* ---------- inventário ---------- */
+const INV=[
+ ["Planejamento e divisão em UPA e UT","Dividir a área produtiva em Unidades de Produção Anual (uma por ano do ciclo) e subdividir cada UPA em Unidades de Trabalho (UT) de tamanho operacional.",
+  "Define a ordem de exploração do ciclo inteiro e fixa o limite de área colhida por ano. É a base do plano de manejo (P7).",
+  "Os lotes de ~2.000 ha não são UPAs: com ciclo de 30 anos a UPA fica na casa de 600 ha. O Lote 13, alongado, precisa de desenho próprio das UTs.","P7"],
+ ["Delimitação e picadas","Abrir linhas de orientação e marcar os limites de cada UT em campo, georreferenciando os vértices.",
+  "Cria a evidência espacial de que a colheita ficou dentro da área licenciada (P1) e de que as APPs e áreas de conservação foram excluídas (P6).",
+  "Cruzar as linhas com os 146 km de cursos d’água dos lotes. Nascentes e igarapés que a base IBGE não tem aparecem aqui e entram na APP.","P1, P6"],
+ ["Identificação e medição das árvores","Plaquetear cada árvore de espécie comercial acima do diâmetro mínimo e medir DAP, altura comercial e qualidade do fuste. Registrar coordenada e espécie.",
+  "É o dado que sustenta o volume, a rastreabilidade do tronco ao produto (P8) e o cálculo do rendimento sustentável (P5).",
+  "É a etapa mais cara e demorada do manejo. O custo cresce com a densidade de árvores por hectare e com a dificuldade de acesso por rio.","P5, P8"],
+ ["Identificação botânica e curadoria","Conferir os nomes populares e científicos com especialista, corrigindo sinonímias e espécies confundidas.",
+  "Evita volume declarado em espécie errada, risco central em DOF e em auditoria de cadeia de custódia. Também mostra se há espécie ameaçada ou protegida (P6, P9).",
+  "Espécie ameaçada ou proibida sai do corte e entra na lista de proteção. Reduz o volume do simulador na prática.","P6, P9"],
+ ["Cálculo de volume e estatística","Calcular volume por árvore e por espécie, fitossociologia e erro de amostragem quando houver amostragem.",
+  "O volume por hectare e a distribuição diamétrica comprovam que a intensidade de corte respeita o ciclo e o incremento (P5).",
+  "Substitui a intensidade hipotética do simulador por número medido. Se der acima de 30 m³/ha, o plano tem de reduzir a intensidade.","P5"],
+ ["Seleção de árvores de corte e retenção","Escolher as árvores a cortar pelo diâmetro mínimo de corte e deixar porta-sementes e remanescentes por espécie.",
+  "Garante regeneração e manutenção da composição florestal (P6, P10). O FSC audita a retenção em campo.",
+  "O percentual mínimo de retenção por espécie e por área vem da norma. Espécies raras podem ficar totalmente fora do corte.","P6, P10"],
+ ["Mapa de infraestrutura","Planejar estradas, pátios e ramais de arraste sobre o mapa das árvores, evitando APP e declives fortes.",
+  "É a base da exploração de impacto reduzido e reduz dano ao solo e à água (P6, P10).",
+  "Aqui se confirma a infraestrutura de 4% do simulador. Em acesso fluvial, o porto e o transporte do rio pesam no custo.","P6, P10"],
+ ["Submissão ao órgão e autorização","Entregar o inventário e o plano operacional anual (POA) para análise e liberação da UPA do ano.",
+  "A colheita só começa com autorização válida (P1). O FSC também confere se o volume autorizado corresponde ao inventariado.",
+  "Em UC estadual, a análise passa pelo órgão gestor da unidade. Contar prazo de análise antes da safra.","P1"],
+ ["Colheita, monitoramento e inventário pós-colheita","Acompanhar o corte, medir danos e instalar parcelas permanentes para medir crescimento e regeneração.",
+  "Fecha o ciclo de monitoramento (P8) e gera o incremento real, o dado que valida ou corrige ciclo e intensidade.",
+  "Sem parcelas permanentes, a taxa de colheita do simulador não tem como ser comprovada em auditoria.","P8, P10"]
+];
+function inv(){
+  const d=+$("#dens").value; $("#vDens").textContent=d+" árv./ha";
+  const upa=SIM.upa, n=upa*d;
+  $("#saidaInv").innerHTML=[
+    [f(upa,0)+" ha","UPA anual a inventariar"],[f(n,0)+" árvores","Plaquetas e medições por UPA"],
+    [f(n*SIM.ciclo,0)+" árvores","Inventário do ciclo inteiro"],[SIM.ciclo+" UPAs","Uma por ano do ciclo, cada uma com seu inventário"]
+  ].map(o=>`<div><div class="v">${o[0]}</div><div class="l">${o[1]}</div></div>`).join("");
+  if(!$("#invSteps").dataset.ok){
+    $("#invSteps").dataset.ok=1;
+    $("#invSteps").innerHTML=INV.map((s,i)=>`<details class="pr" style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:600;font-size:14px"><span class="n" style="color:var(--muted);margin-right:6px">${i+1}.</span>${s[0]} <span class="chip mute" style="margin-left:6px">${s[4]}</span></summary>
+      <div class="k">O que se faz</div><p>${s[1]}</p><div class="k">Implicação para o FSC e a licença</div><p>${s[2]}</p><div class="k">Implicação para esta área</div><p>${s[3]}</p></details>`).join("");
+  }
+}
+$("#dens").addEventListener("input",inv);
+
+/* ---------- princípios FSC ---------- */
+const PR=[
+ ["1","Conformidade com as leis","Licença e título em dia, sem passivo legal.",
+  "Lotes dentro da "+CTX.uc+" (CDRU 012/2022 SECT). O zoneamento enquadra "+f(EXT_PCT,1)+"% em Uso Extensivo.","atenção",
+  "Plano de gestão da UC e regra da zona para manejo madeireiro; autorização do órgão licenciador (PMFS); regularidade do CAR e da CDRU; CNPJ e ata da ASPAFEMP."],
+ ["2","Direitos dos trabalhadores","Contratos, segurança do trabalho, sem trabalho infantil ou forçado.",
+  "Sem dado no shape.","sem dado","Quadro de pessoal da operação, NR-31, EPI, treinamento, política de saúde e segurança."],
+ ["3","Direitos dos povos indígenas","Direitos de uso e consulta livre, prévia e informada (CLPI).",
+  "Nenhuma terra indígena aparece nas bases da pasta.","verificar","Consulta à FUNAI sobre terras indígenas e povos isolados na região; declaração de ausência de reivindicação."],
+ ["4","Relações com as comunidades","Respeito a direitos legais e consuetudinários, diálogo e benefícios.",
+  CTX.comunidades20+" comunidades a até 20 km; a mais próxima a "+f(CTX.comunidadeProx,1)+" km.","atenção",
+  "Mapeamento de usos tradicionais (castanha, caça, pesca, roças), reuniões registradas, mecanismo de queixas, acordos de benefício."],
+ ["5","Benefícios da floresta","Viabilidade econômica, uso múltiplo, rendimento sustentável.",
+  "O simulador dá a ordem de grandeza da produção anual.","em andamento","Inventário florestal, plano de produtos, análise de viabilidade, taxa de colheita contra incremento."],
+ ["6","Valores e impactos ambientais","Proteger solo, água e biodiversidade; áreas de conservação.",
+  "APP estimada em "+f(TOT_APP,0)+" ha ("+f(TOT_APP/TOT*100,1)+"%), "+f(TOT_HID,0)+" km de cursos d’água.","atenção",
+  "Mapa de APP e nascentes de campo, avaliação de impacto, áreas de conservação representativas, fauna ameaçada, plano de resíduos e combustíveis."],
+ ["7","Planejamento do manejo","Plano documentado, objetivos, UPAs, revisão periódica.",
+  "Lotes de ~2.000 ha são a base natural para as unidades de produção.","em andamento","PMFS com divisão em UPAs, inventário 100% (UPA anual), cronograma do ciclo, resumo público do plano."],
+ ["8","Monitoramento e avaliação","Indicadores medidos, parcelas permanentes, rastreabilidade.",
+  "Sem dado.","sem dado","Parcelas permanentes, monitoramento de dano e regeneração, rastreio árvore a produto (DOF/SINAFLOR)."],
+ ["9","Altos Valores de Conservação (HCV)","Identificar, manter e monitorar HCV 1 a 6.",
+  "FLONA do Pau-Rosa a "+f(CTX.flona,1)+" km e Parque Nacional da Amazônia a "+f(CTX.parna,0)+" km. Os lotes ficam dentro de UC estadual.","verificar",
+  "Avaliação de HCV (biodiversidade, paisagem, ecossistemas, serviços, necessidades e valores culturais das comunidades), consulta a especialistas."],
+ ["10","Implementação das atividades","Impacto reduzido, estradas e pátios planejados, proteção contra fogo e caça.",
+  "O croqui de acesso indica rota fluvial pelos rios Maués-Açu e Parauari (cerca de 59 km).","atenção","Planejamento de estradas e trilhas, exploração de impacto reduzido (EIR), controle de caça e de acesso, plano de prevenção ao fogo."]
+];
+const CHIP={ "atenção":"", "sem dado":"mute","verificar":"info","em andamento":"ok"};
+function fsc(){
+  let st={}; try{st=JSON.parse(localStorage.getItem("fsc_aspafemp")||"{}")}catch(e){}
+  $("#fsc").innerHTML=PR.map(p=>`<div class="pr${st[p[0]]?" done":""}"><h3><span><span class="n">P${p[0]}</span>${p[1]}</span><span class="chip ${CHIP[p[4]]}">${p[4]}</span></h3>
+    <p>${p[2]}</p><div class="k">O que os dados mostram</div><p>${p[3]}</p><div class="k">Evidências a reunir</div><p>${p[5]}</p>
+    <label class="chk"><input type="checkbox" data-p="${p[0]}" ${st[p[0]]?"checked":""}> Evidências reunidas</label></div>`).join("");
+  const n=Object.values(st).filter(Boolean).length;
+  $("#progTxt").textContent=n+" de 10 princípios com evidências reunidas"; $("#progBar").style.width=(n*10)+"%";
+  $("#fsc").querySelectorAll("input").forEach(i=>i.onchange=()=>{st[i.dataset.p]=i.checked;try{localStorage.setItem("fsc_aspafemp",JSON.stringify(st))}catch(e){}fsc()});
+  $("#zerar").onclick=()=>{st={};try{localStorage.removeItem("fsc_aspafemp")}catch(e){}fsc()};
+}
+
+/* ---------- pendências ---------- */
+function pend(){
+  const nums=L.map(l=>+l.lote), miss=[]; for(let i=Math.min(...nums);i<=Math.max(...nums);i++) if(!nums.includes(i)) miss.push(String(i).padStart(2,"0"));
+  const long=L.filter(l=>l.comp<.3).map(l=>l.nome).join(", ");
+  const items=[
+   `<b>Enquadramento na UC:</b> confirmar no plano de gestão da ${CTX.uc} se manejo madeireiro empresarial cabe na zona de Uso Extensivo. A zona de Manejo Florestal do zoneamento não coincide com nenhum dos 10 lotes.`,
+   `<b>Lotes fora do recorte:</b> o recorte de 20.000 ha tem os lotes 03 a 09, 12, 13 e 15. Faltam ${miss.join(", ")} na faixa 03–15. O contorno original de 26.362 ha usava outra seleção (01–04 e 08–16), então a lista de lotes mudou entre as versões.`,
+   `<b>Forma dos lotes:</b> ${long||"nenhum lote"} tem forma muito alongada (compacidade abaixo de 0,3). Rever a divisão em unidades de produção.`,
+   `<b>Camada UPF_2000HA:</b> as 10 UPFs de 2.000 ha da pasta ficam ao sul e não se sobrepõem a nenhum destes lotes. Parece versão antiga; não entrou no painel.`,
+   `<b>APP:</b> faixa de 30 m calculada sobre a hidrografia IBGE. Nascentes (raio de 50 m) e igarapés pequenos fora da base exigem levantamento de campo e imagem de alta resolução.`,
+   `<b>Sobreposição de 12, 13 e 15:</b> as bordas se tocam com sobreposição de poucos centímetros quadrados (ruído de digitalização). Sem efeito prático; vale limpar a topologia no QGIS.`,
+   `<b>Comunidades:</b> nenhuma está dentro dos lotes, mas ${CTX.comunidades20} ficam a até 20 km. O FSC pede consulta e acordo documentados (P3 e P4). A camada de comunidades não traz número de famílias.`,
+   `<b>Dados que o shape não tem:</b> inventário florestal, nascentes, HCV, estradas e pátios existentes, uso atual do solo, vizinhos e sobreposições com CAR de terceiros.`
+  ];
+  $("#pend").innerHTML=items.map(i=>`<li>${i}</li>`).join("");
+}
+
+/* ---------- tema e inicialização ---------- */
+$("#tema").onclick=()=>{
+  const r=document.documentElement, cur=r.getAttribute("data-theme");
+  const dark=cur?cur==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  r.setAttribute("data-theme",dark?"light":"dark");
+};
+["modo","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
+["ciclo","intens","infra","cons"].forEach(id=>$("#"+id).addEventListener("input",sim));
+$("#gerado").textContent=CTX.gerado;
+kpis(); drawMap(); fsc(); pend(); sim();
+</script>
+</body>
+</html>

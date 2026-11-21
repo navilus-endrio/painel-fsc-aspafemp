@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Painel FSC – ASPAFEMP, área de manejo florestal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..800;1,14..32,400..700&display=swap">
+<style>
+/*CSS*/
+/* ---- ajustes do painel ASPAFEMP ---- */
+svg#mapa{width:100%;height:auto;display:block;border-radius:12px;background:var(--sunk)}
+.lot{stroke:var(--ink);stroke-width:.0009;stroke-opacity:.75;cursor:pointer;transition:opacity .12s}
+.lot:hover{opacity:.85}
+.lot:focus{outline:none;stroke:var(--accent);stroke-width:.003}
+.lot.sel{stroke:#d9480f;stroke-width:.0032}
+.lotlbl{font:700 .0095px var(--font-body);fill:var(--ink);text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:var(--solid);stroke-width:.0022;stroke-linejoin:round}
+.hyd{fill:none;stroke:#2b73b8;stroke-width:.0006;stroke-linecap:round}
+.mapwrap{position:relative}
+#tip2{position:absolute;pointer-events:none;background:var(--ink);color:var(--solid);font-size:12.5px;padding:5px 9px;border-radius:7px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:3}
+.ctl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:12px;font-size:14px}
+.ctl label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.ctl select{font:inherit;font-size:14px;background:var(--glass-strong);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+.leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);margin-top:10px}
+.leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:1px solid rgba(0,0,0,.18)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:15px;margin:12px 0}
+.dl dt{color:var(--muted)} .dl dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.zbar{height:10px;border-radius:99px;overflow:hidden;display:flex;background:var(--sunk);margin-top:6px}
+.zbar span{display:block;height:100%}
+.zrow{display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-top:5px}
+.stack{display:grid;gap:8px;margin-top:12px}
+.sub2{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:650;margin-top:14px}
+tr.row{cursor:pointer} tr.row:hover td{background:var(--sunk)} tr.row.sel td{background:var(--sunk);font-weight:650}
+.fld{margin:0 0 14px}
+.fld label{display:flex;justify-content:space-between;font-size:14.5px;margin-bottom:5px;gap:10px}
+.fld label b{font-variant-numeric:tabular-nums}
+.fld input[type=range]{width:100%;accent-color:var(--accent)}
+.outg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.outg div{background:var(--sunk);border-radius:12px;padding:12px 14px}
+.outg .v{font:700 22px/1.1 var(--font-data);font-variant-numeric:tabular-nums}
+.outg .l{font-size:13px;color:var(--muted);margin-top:3px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+details.pr.done{border-color:var(--accent)}
+.chk{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14.5px;cursor:pointer}
+.k2{font:700 12px var(--font-body);text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin:12px 0 4px}
+.nowrap{white-space:nowrap}
+.gmap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+.gmap>*{min-width:0}
+@media (max-width:860px){.gmap{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:520px){.top .logo-solar{display:none}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap">
+    <div class="logos"><img src="/*LOGO1*/" alt="Brandão Engenharia e Projetos"></div>
+    <div class="logos logo-solar"><img src="/*LOGO2*/" alt="Brandão Solar Engenharia e Comércio"></div>
+    <div class="brand"><b>ASPAFEMP · manejo florestal e FSC</b>Triagem conferida em 21/11/2026</div>
+    <nav aria-label="Seções">
+      <a href="#resumo">Resumo</a><a href="#area">Área</a><a href="#pfi">PFI</a><a href="#simulador">Simulador</a>
+      <a href="#inventario">Inventário</a><a href="#principios">10 Princípios</a><a href="#pendencias">Pendências</a><a href="#siglas">Siglas</a>
+    </nav>
+    <button type="button" class="theme-btn" id="theme-btn" aria-label="Alternar modo claro e escuro" title="Alternar modo claro e escuro">
+      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    </button>
+  </div>
+</div>
+
+<section class="hero" id="resumo">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">FSC-STD-BRA-02.1-2026 · vigente desde 18/08/2026 · Floresta Estadual de Maués (AM)</div>
+        <h1 style="margin-top:12px">Área de 20.000 ha para manejo florestal: <b>__PFI_PCT__% é PFI e pede ao menos __CORE_HA__ ha de área central sem exploração</b></h1>
+        <p class="lede">Triagem da área da ASPAFEMP (10 lotes) contra o padrão FSC para florestas naturais no Brasil, versão 2.1. Cruza o contorno dos lotes com zoneamento, hidrografia, Paisagens Florestais Intactas e comunidades. Não substitui a leitura do padrão oficial nem a avaliação de campo.</p>
+        <p class="stamp"><b>Padrão:</b> FSC-STD-BRA-02.1-2026 · <b>Conferido em:</b> 21/11/2026 · <b>Validade:</b> vale enquanto o FSC não publicar nova versão do padrão, o contorno dos lotes não mudar e o plano de gestão da UC não for revisto. Confira em <a href="https://br.fsc.org" rel="noopener">br.fsc.org</a>.</p>
+        <p class="src siglas-note"><b>Siglas:</b> PFI = Paisagem Florestal Intacta; UC = Unidade de Conservação.</p>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><span class="v num">20.000 ha</span><span class="l">área dos 10 lotes (03 a 09, 12, 13 e 15)</span></div>
+        <div class="kpi"><span class="v num">__PFI_PCT__%</span><span class="l">dos lotes em PFI (IFL 2020), __PFI_HA__ ha</span></div>
+        <div class="kpi alert"><span class="v num">__CORE_HA__ ha</span><span class="l">área central mínima, 20% da PFI (paisagem apta)</span></div>
+        <div class="kpi"><span class="v num">__APP_HA__ ha</span><span class="l">APP estimada, __APP_PCT__% da área</span></div>
+      </div>
+    </div>
+    <div class="msgs">
+      <div class="msg info"><h3>O que é</h3><p>Painel de triagem para decidir se a área serve ao manejo certificado e o que falta reunir antes de contratar a pré-avaliação.</p></div>
+      <div class="msg warn"><h3>Zoneamento da UC</h3><p>99,7% dos lotes estão em zona de Uso Extensivo, nenhum em Manejo Florestal. Confirmar no plano de gestão se o manejo madeireiro é permitido ali.</p></div>
+      <div class="msg ok"><h3>Paisagem apta</h3><p>Todos os lotes caem na classe Apta do Anexo H: proteção de 20% da PFI como área central (9.2.4.1).</p></div>
+      <div class="msg no"><h3>Primeira certificação</h3><p>Vale o 9.2.7 (rede de conservação ligada à PFI) e o 9.2.5: colheita e estradas só fora da área central, com inventário pré-exploratório de 100%.</p></div>
+      <div class="msg info"><h3>Não é SLIMF</h3><p>Mais de 1.000 ha e volume anual do cenário acima de 5.000 m³. Vale também o 9.2.8, esfera de influência.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="area">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">A área</div>
+      <h2>Os 10 lotes</h2>
+      <p class="lede">Clique em um lote, no mapa ou na tabela, para ver área, APP estimada, PFI, zonas do zoneamento e alertas.</p>
+    </header>
+    <div class="gmap">
+      <div class="panel">
+        <div class="mapwrap"><svg id="mapa" role="img" aria-label="Mapa dos lotes da ASPAFEMP"></svg><div id="tip2"></div></div>
+        <div class="ctl">
+          <label>Colorir por
+            <select id="modo">
+              <option value="area">Área do lote</option>
+              <option value="pfi">PFI (% do lote)</option>
+              <option value="app">APP estimada (% do lote)</option>
+              <option value="comp">Compacidade da forma</option>
+              <option value="zona">Zona dominante</option>
+            </select>
+          </label>
+          <label><input type="checkbox" id="chkPfi" checked> PFI (IFL 2020)</label>
+          <label><input type="checkbox" id="chkZon"> Zoneamento</label>
+          <label><input type="checkbox" id="chkHid" checked> Hidrografia</label>
+          <label><input type="checkbox" id="chkLbl" checked> Rótulos</label>
+        </div>
+        <div class="leg" id="legenda"></div>
+        <p class="src siglas-note"><b>Siglas:</b> PFI = Paisagem Florestal Intacta; IFL = Intact Forest Landscapes; APP = Área de Preservação Permanente.</p>
+      </div>
+      <div class="panel" id="detalhe"></div>
+    </div>
+    <div class="panel" style="margin-top:18px">
+      <h3>Lotes em números</h3>
+      <p class="muted" style="margin-top:6px;font-size:15px">Clique no cabeçalho para ordenar. “Líquida” = área − APP estimada − infraestrutura do simulador.</p>
+      <div class="tbl-wrap" style="margin-top:12px"><table id="tabela"></table></div>
+      <p class="src">Áreas: atributos do shape (AREA_CONTORNO_LOTES), conferidos contra a área elipsoidal (soma 20.000,01 ha). APP: faixa de 30 m de cada lado dos cursos d’água de 0 a 10 m da hidrografia do IBGE (Lei 12.651/2012, art. 4º), sem nascentes.</p>
+    </div>
+  </div>
+</section>
+
+<section id="pfi">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Revisão parcial de 2026 · Moção 23/2020 · indicador 9.2.4.1</div>
+      <h2>PFI nos lotes e área central mínima</h2>
+      <p class="lede">A V2.1 exige proteger uma fração da PFI que cai dentro da Unidade de Manejo: o percentual da classe da paisagem vezes a área de PFI. Aqui, a classe é Apta (20%) em todos os lotes.</p>
+    </header>
+    <div class="grid3" style="margin-bottom:18px">
+      <div class="avc a1"><h3>Classe da paisagem</h3><p class="muted" style="margin-top:6px;font-size:15px"><b>Apta, 20%.</b> Os 10 lotes ficam inteiros na classe 2 do mapa de aptidão do Anexo H (vetorização usada no painel do Padrão FSC).</p></div>
+      <div class="avc a2"><h3>PFI nos lotes</h3><p class="muted" style="margin-top:6px;font-size:15px"><b>__PFI_HA__ ha</b> (__PFI_PCT__% da área), pelo IFL 2020. O Lote 06 é 100% PFI; o Lote 03 tem só __PFI03__%.</p></div>
+      <div class="avc a3"><h3>Área central mínima</h3><p class="muted" style="margin-top:6px;font-size:15px"><b>__CORE_HA__ ha</b> (__CORE_PCT__% da área total), sem exploração e sem estradas. Pode ficar num único bloco, para reduzir fragmentação.</p></div>
+    </div>
+    <div class="panel" style="margin-bottom:18px">
+      <h3>PFI por lote</h3>
+      <p class="muted" style="margin-top:6px;font-size:15px">Barra = percentual do lote em PFI. Ordene por lote ou por área central mínima na tabela acima.</p>
+      <div id="pfiBars" style="margin-top:14px"></div>
+      <div class="req" style="margin-top:10px"><div class="pct" id="reqPct">20%</div><div class="txt"><b id="reqTxt"></b><small>Classe Apta: Foz do Amazonas, Negro, Purus, Tapajós, Araguaia, Gurupi, Madeira, Baixo Tocantins, Mearim, Xingu, Japurá e Javari/Juruá. Confirmar a paisagem com o shapefile oficial.</small></div></div>
+      <p class="src">Indicador 9.2.4.1 (p. 56–57); Anexo H (p. 108–109).</p>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>O que isso muda no manejo</h3>
+        <ul style="margin:12px 0 0;padding-left:20px;color:var(--muted)">
+          <li><b>Colheita e estradas</b> só fora da área central, com EIR (CONAMA 406/2009) e inventário pré-exploratório de 100% (9.2.5, p. 57–58).</li>
+          <li><b>Nenhuma PFI</b> pode cair abaixo de 50.000 ha na paisagem (9.2.5).</li>
+          <li><b>9.2.7:</b> a rede de áreas de conservação precisa estar ligada à PFI. A Reserva Absoluta pode compor a área central; APPs fora dela não entram no cálculo.</li>
+          <li><b>9.2.8:</b> compromissos na esfera de influência (fogo, conselho da UC, educação ambiental, acordos territoriais).</li>
+        </ul>
+        <p class="src">Páginas 57–59.</p>
+      </div>
+      <div class="panel">
+        <h3>Limitações desta análise</h3>
+        <ol style="margin:12px 0 0;padding-left:20px;color:var(--muted);font-size:15px">
+          <li>A PFI usa o IFL 2020 como aproximação; a norma pede o mapa de 01/01/2017.</li>
+          <li>A aptidão é a vetorização da figura do Anexo H (erro de cerca de 10 km). Os lotes estão longe de qualquer fronteira entre classes? <b>Não verificado</b>; confirme com o shapefile oficial (info@fsc.org.br).</li>
+          <li>O IFL está simplificado (~1 km): os hectares de PFI são de triagem.</li>
+          <li>Proporção calculada em projeção policônica e aplicada à área elipsoidal do lote.</li>
+        </ol>
+        <p class="src">Mesmas limitações do painel de referência, <a href="https://navilus-endrio.github.io/painel-fsc-manejo/" rel="noopener">Padrão FSC de Manejo Florestal</a>.</p>
+      </div>
+    </div>
+    <p class="src siglas-note"><b>Siglas:</b> PFI = Paisagem Florestal Intacta; IFL = Intact Forest Landscapes; EIR = Exploração de Impacto Reduzido; CONAMA = Conselho Nacional do Meio Ambiente.</p>
+  </div>
+</section>
+
+<section id="simulador">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Cenário de planejamento</div>
+      <h2>Simulador de manejo</h2>
+      <p class="lede">Do total da área, tira-se a área central de PFI, a APP, a infraestrutura e uma reserva extra. O que sobra, dividido pelo ciclo, dá a área de colheita anual (UPA). Troque pelos números do PMFS quando existirem.</p>
+    </header>
+    <div class="panel">
+      <div class="two">
+        <div>
+          <div class="fld"><label>Ciclo de corte <b id="vCiclo"></b></label><input type="range" id="ciclo" min="25" max="35" step="1" value="30"></div>
+          <div class="fld"><label>Intensidade de corte <b id="vInt"></b></label><input type="range" id="intens" min="10" max="30" step="1" value="20"></div>
+          <div class="fld"><label>Infraestrutura (estradas, pátios, trilhas) <b id="vInfra"></b></label><input type="range" id="infra" min="0" max="10" step="0.5" value="4"></div>
+          <div class="fld"><label>Reserva extra (rede de conservação, AVC) <b id="vCons"></b></label><input type="range" id="cons" min="0" max="15" step="1" value="0"></div>
+          <label class="chk"><input type="checkbox" id="ovl"> Posicionar a área central sobre as APPs (sobreposição)</label>
+          <p class="src" style="margin-top:10px">Faixas: ciclo de 25 a 35 anos e até 30 m³/ha (IN MMA 5/2006, PMFS de grande porte). Confira a norma vigente e a do órgão licenciador. O padrão FSC não fixa esses números.</p>
+        </div>
+        <div>
+          <div class="outg" id="saida"></div>
+          <div class="stack" id="alertaSim"></div>
+        </div>
+      </div>
+      <p class="src siglas-note"><b>Siglas:</b> UPA = Unidade de Produção Anual; APP = Área de Preservação Permanente; AVC = Atributo de Alto Valor de Conservação; PMFS = Plano de Manejo Florestal Sustentável; IN MMA = Instrução Normativa do Ministério do Meio Ambiente.</p>
+    </div>
+  </div>
+</section>
+
+<section id="inventario">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Do inventário à certificação</div>
+      <h2>Inventário florestal: etapas e implicações</h2>
+      <p class="lede">O inventário a 100% antes da colheita é exigência do 9.2.5 nas áreas de PFI fora da área central, e aqui são __PFI_PCT__% da área. Clique em cada etapa para ver o que se faz e o que ela implica.</p>
+    </header>
+    <div class="panel" style="margin-bottom:14px">
+      <div class="two">
+        <div class="fld" style="margin:0"><label>Árvores a inventariar por hectare (hipótese) <b id="vDens"></b></label><input type="range" id="dens" min="2" max="25" step="1" value="8">
+          <p class="src" style="margin-top:8px">Use o valor do inventário amostral ou de um PMFS vizinho. A UPA anual vem do simulador.</p></div>
+        <div class="outg" id="saidaInv"></div>
+      </div>
+    </div>
+    <div class="journey" id="journey" role="group" aria-label="Etapas do inventário"></div>
+    <div class="panel jdetail" id="jdetail" aria-live="polite"></div>
+    <div class="jnav">
+      <button type="button" class="seg" id="jprev" style="padding:8px 12px;font:600 14px var(--font-body);cursor:pointer;color:var(--muted)">← Etapa anterior</button>
+      <button type="button" class="seg" id="jnext" style="padding:8px 12px;font:600 14px var(--font-body);cursor:pointer;color:var(--muted)">Próxima etapa →</button>
+    </div>
+    <p class="src siglas-note"><b>Siglas:</b> UPA = Unidade de Produção Anual; UT = Unidade de Trabalho; DAP = diâmetro à altura do peito; CAP = Corte Anual Permitido; EIR = Exploração de Impacto Reduzido; POA = Plano Operacional Anual; PFI = Paisagem Florestal Intacta.</p>
+  </div>
+</section>
+
+<section id="principios">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Núcleo normativo aplicado à área</div>
+      <h2>Os 10 Princípios nesta área</h2>
+      <p class="lede">Para cada Princípio: o que os dados da área mostram e as evidências a reunir. Marque o que já tem documento na pasta do cliente; o progresso fica salvo neste navegador.</p>
+    </header>
+    <div class="panel" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:15px"><span id="progTxt"></span><button class="seg" id="zerar" type="button" style="padding:6px 11px;font:600 13px var(--font-body);cursor:pointer;color:var(--muted)">Zerar marcações</button></div>
+      <div class="hbar" style="grid-template-columns:minmax(0,1fr) 44px;margin:10px 0 0"><span class="track"><span class="fill" id="progBar" style="width:0"></span></span><span class="v" id="progN">0</span></div>
+    </div>
+    <div id="lista" style="display:grid;gap:10px"></div>
+    <p class="src">Títulos, contagem de critérios e páginas conforme o padrão FSC-STD-BRA-02.1-2026 (PDF em português). Os 70 critérios têm o mesmo peso e se aplicam em conjunto.</p>
+  </div>
+</section>
+
+<section id="pendencias">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Antes da pré-avaliação</div>
+      <h2>Pendências e pontos de atenção</h2>
+      <p class="lede">O que os dados da pasta ainda não resolvem, em ordem de impacto sobre a certificação.</p>
+    </header>
+    <div class="panel"><ul id="pend" style="margin:0;padding-left:20px;color:var(--ink)"></ul></div>
+  </div>
+</section>
+
+<section id="siglas">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Legendas</div>
+      <h2>Siglas usadas neste painel</h2>
+      <p class="lede">Significado das abreviações, na ordem em que aparecem.</p>
+    </header>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sigla</th><th>Significado</th><th>Observação</th></tr></thead>
+        <tbody>
+          <tr><td><b>FSC</b></td><td>Forest Stewardship Council</td><td>Sistema de certificação voluntária e independente.</td></tr>
+          <tr><td><b>PFI</b></td><td>Paisagem Florestal Intacta</td><td>Território com pelo menos 50.000 ha e 10 km de largura, minimamente influenciado por atividade humana.</td></tr>
+          <tr><td><b>IFL</b></td><td><i>Intact Forest Landscapes</i></td><td>Mapa de 2020 usado aqui como aproximação da PFI.</td></tr>
+          <tr><td><b>UMF</b></td><td>Unidade de Manejo Florestal</td><td>Área delimitada submetida ao manejo e à certificação; aqui, os 10 lotes.</td></tr>
+          <tr><td><b>UC</b></td><td>Unidade de Conservação</td><td>Floresta Estadual de Maués, de uso sustentável.</td></tr>
+          <tr><td><b>CDRU</b></td><td>Concessão de Direito Real de Uso</td><td>Título da Floresta Estadual de Maués (CDRU 012/2022 SECT).</td></tr>
+          <tr><td><b>APP</b></td><td>Área de Preservação Permanente</td><td>Protegida pelo Código Florestal (Lei 12.651/2012).</td></tr>
+          <tr><td><b>AVC</b></td><td>Atributo de Alto Valor de Conservação</td><td>São seis (AVC 1 a 6); a proteção do AVC 2 abrange as PFIs.</td></tr>
+          <tr><td><b>CAN</b></td><td>Rede de Áreas de Conservação</td><td>Áreas protegidas dentro da UMF, ligadas à PFI (9.2.7).</td></tr>
+          <tr><td><b>EIR</b></td><td>Exploração de Impacto Reduzido</td><td>Técnica de colheita que reduz danos; base legal citada pela norma: Resolução CONAMA 406/2009.</td></tr>
+          <tr><td><b>CAP</b></td><td>Corte Anual Permitido</td><td>Volume comercial anual aprovado, calculado por unidade de trabalho com base em inventário a 100%.</td></tr>
+          <tr><td><b>SLIMF</b></td><td><i>Small and Low Intensity Managed Forests</i></td><td>Até 1.000 ha, ou colheita abaixo de 20% do IMA e de 5.000 m³/ano, ou só PFNM, ecoturismo e serviços ambientais (Tabela 1, p. 12).</td></tr>
+          <tr><td><b>IMA</b></td><td>Incremento Médio Anual</td><td>Crescimento médio da floresta por ano.</td></tr>
+          <tr><td><b>UPA</b></td><td>Unidade de Produção Anual</td><td>Parte da área produtiva colhida a cada ano do ciclo.</td></tr>
+          <tr><td><b>UT</b></td><td>Unidade de Trabalho</td><td>Subdivisão operacional da UPA.</td></tr>
+          <tr><td><b>POA</b></td><td>Plano Operacional Anual</td><td>Plano da colheita de cada UPA, submetido ao órgão licenciador.</td></tr>
+          <tr><td><b>PMFS</b></td><td>Plano de Manejo Florestal Sustentável</td><td>Instrumento legal e técnico que orienta o manejo.</td></tr>
+          <tr><td><b>DAP</b></td><td>Diâmetro à altura do peito</td><td>Medida padrão de diâmetro da árvore, a 1,30 m do solo.</td></tr>
+          <tr><td><b>CONAMA</b></td><td>Conselho Nacional do Meio Ambiente</td><td>Resolução 406/2009: parâmetros técnicos de PMFS na Amazônia.</td></tr>
+          <tr><td><b>IN MMA</b></td><td>Instrução Normativa do Ministério do Meio Ambiente</td><td>IN 5/2006: ciclo, intensidade e procedimentos de PMFS.</td></tr>
+          <tr><td><b>CAR</b></td><td>Cadastro Ambiental Rural</td><td>Registro autodeclaratório do imóvel.</td></tr>
+          <tr><td><b>CLPI</b></td><td>Consentimento livre, prévio e informado</td><td>Base dos Princípios 3 e 4 quando há direitos de povos e comunidades.</td></tr>
+          <tr><td><b>CREA</b></td><td>Conselho Regional de Engenharia e Agronomia</td><td>Registro profissional do responsável técnico.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fontes"><h3>Fontes consultadas</h3>
+      <ul>
+        <li>FSC-STD-BRA-02.1-2026 (PT), Padrão de Manejo Florestal FSC para Florestas Naturais no Brasil. Títulos, indicadores e páginas conforme o resumo do painel <a href="https://navilus-endrio.github.io/painel-fsc-manejo/" rel="noopener">Padrão FSC de Manejo Florestal</a>, conferido contra o PDF oficial (131 páginas).</li>
+        <li>Camadas de PFI (IFL 2020) e de aptidão das paisagens (vetorização do Anexo H) tiradas desse mesmo painel. O shapefile oficial do Anexo H pode ser pedido a <a href="mailto:info@fsc.org.br">info@fsc.org.br</a>; <b>não foi solicitado</b>.</li>
+        <li>Intact Forest Landscapes 2020: Potapov, P. et al., 2017. The last frontiers of wilderness. <i>Science Advances</i> 3, e1600821. Dados em <a href="https://intactforests.org/data.ifl.html" rel="noopener">intactforests.org</a>, licença <b>CC BY 4.0</b>. Alterações: recortado, unido e simplificado (cerca de 1 km).</li>
+        <li>Contorno dos lotes (AREA_CONTORNO_LOTES), zoneamento, hidrografia, comunidades e CDRU 012/2022 SECT da Floresta Estadual de Maués, da pasta do cliente ASPAFEMP. Hidrografia de base IBGE.</li>
+        <li>IN MMA 5/2006 e Resolução CONAMA 406/2009, para ciclo, intensidade e EIR.</li>
+      </ul>
+      <p class="aviso" style="margin-top:10px"><b>Direitos e uso.</b> Este painel é um <b>resumo não oficial</b>, elaborado pela Brandão Engenharia e Projetos, sem vínculo com o FSC, e não substitui o documento oficial. O padrão é © 2026 Forest Stewardship Council, A.C., todos os direitos reservados (FSC® F000100); aqui o conteúdo é resumido, com indicação das páginas. Texto oficial e versão em inglês, que prevalece, em <a href="https://br.fsc.org" rel="noopener">br.fsc.org</a>.</p>
+      <p class="aviso" style="margin-top:10px"><b>Dados do cliente.</b> Este arquivo contém o contorno dos lotes da ASPAFEMP. Não publicar em endereço aberto sem aprovação. Tudo é processado no navegador; nada é enviado a servidor.</p></div>
+    <p><b>Endrio Sulivam Texeira da Silva</b> · Engenheiro Florestal — CREA 37335AM<br>Brandão Engenharia e Projetos LTDA · CNPJ 56.107.054/0001-05</p>
+    <p style="margin-top:10px">Este documento é de propriedade da <b>Brandão Engenharia e Projetos</b>. Triagem elaborada e conferida em 21/11/2026 a partir de FSC-STD-BRA-02.1-2026 PT e dos dados geoespaciais da ASPAFEMP. Para uso em auditoria ou certificação, consulte o documento oficial.</p>
+  </div>
+</footer>
+
+<script>
+const DATA = /*DATA*/;
+const CTX = {uc:"Floresta Estadual de Maués", com20:13, comProx:5.1, flona:22.9, parna:57};
+const ZCOR = {"Especial para adequação fundiária":"#b08968","Preservação":"#2f6f4e","Manejo Florestal":"#1f8a8a","Uso Extensivo":"#a9cf98","Uso Intensivo":"#e0b44c","Amortecimento":"#d9d0bf"};
+const f=(n,d=0)=>Number(n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const $=s=>document.querySelector(s);
+const L=DATA.lotes, PCT=20;
+
+/* tema */
+const root=document.documentElement;
+try{const t=localStorage.getItem("painel-tema"); if(t) root.dataset.theme=t;}catch(e){}
+const isDark=()=>root.dataset.theme?root.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+$("#theme-btn").addEventListener("click",()=>{const t=isDark()?"light":"dark";root.dataset.theme=t;try{localStorage.setItem("painel-tema",t)}catch(e){}});
+
+/* métricas */
+L.forEach(l=>{
+  l.comp=4*Math.PI*(l.area_ha*1e4)/Math.pow(l.perim_m,2);
+  l.appPct=l.app_ha/l.area_ha*100; l.pfiPct=l.pfi_ha/l.area_ha*100; l.core=l.pfi_ha*PCT/100;
+  const zs=Object.entries(l.zonas).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]); const tot=zs.reduce((s,[,v])=>s+v,0);
+  l.zlist=zs.map(([z,v])=>[z,v/tot*100]); l.zdom=zs[0][0];
+});
+const TOT=L.reduce((s,l)=>s+l.area_ha,0), TOT_APP=L.reduce((s,l)=>s+l.app_ha,0), TOT_HID=L.reduce((s,l)=>s+l.hidro_km,0);
+const TOT_PFI=L.reduce((s,l)=>s+l.pfi_ha,0), CORE=TOT_PFI*PCT/100;
+let sel=null, sortKey="lote", sortDir=1;
+
+/* mapa */
+const lat0=-3.9, kx=Math.cos(lat0*Math.PI/180), px=x=>x*kx, py=y=>-y, bb=DATA.bbox, mg=.045;
+const VB=[px(bb[0])-mg,py(bb[3])-mg,(px(bb[2])-px(bb[0]))+2*mg,(py(bb[1])-py(bb[3]))+2*mg];
+const rp=r=>"M"+r.map(c=>px(c[0]).toFixed(5)+","+py(c[1]).toFixed(5)).join("L")+"Z";
+function gp(g){
+  if(g.type==="Polygon")return g.coordinates.map(rp).join("");
+  if(g.type==="MultiPolygon")return g.coordinates.map(p=>p.map(rp).join("")).join("");
+  if(g.type==="LineString")return "M"+g.coordinates.map(c=>px(c[0]).toFixed(5)+","+py(c[1]).toFixed(5)).join("L");
+  if(g.type==="MultiLineString")return g.coordinates.map(l=>"M"+l.map(c=>px(c[0]).toFixed(5)+","+py(c[1]).toFixed(5)).join("L")).join("");
+  if(g.type==="GeometryCollection")return g.geometries.map(gp).join("");
+  return "";
+}
+const lerp=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+const scale=t=>"rgb("+lerp([226,240,226],[24,100,66],Math.max(0,Math.min(1,t)))+")";
+const metric=l=>{const m=$("#modo").value;return m==="area"?l.area_ha:m==="pfi"?l.pfiPct:m==="app"?l.appPct:l.comp};
+function colorFor(l){
+  const m=$("#modo").value; if(m==="zona")return ZCOR[l.zdom]||"#999";
+  const v=L.map(metric),lo=Math.min(...v),hi=Math.max(...v); return scale(hi===lo?.5:(metric(l)-lo)/(hi-lo));
+}
+function drawMap(){
+  const svg=$("#mapa"); svg.setAttribute("viewBox",VB.join(" ")); let s="";
+  if($("#chkZon").checked) s+=DATA.zoneamento.map(z=>`<path d="${gp(z.geom)}" fill="${ZCOR[z.zona]||"#ccc"}" fill-opacity=".55"/>`).join("");
+  if($("#chkPfi").checked) s+=`<path d="${gp(DATA.pfi)}" fill="#0b5c73" fill-opacity=".32" stroke="#0b5c73" stroke-opacity=".5" stroke-width=".0008"/>`;
+  s+=L.map(l=>`<path class="lot${sel===l.lote?" sel":""}" data-l="${l.lote}" tabindex="0" role="button" aria-label="${l.nome}, ${f(l.area_ha,0)} hectares" d="${rp(l.ring)}" fill="${colorFor(l)}" fill-opacity=".62"/>`).join("");
+  if($("#chkHid").checked) s+=DATA.hidro.map(h=>`<path class="hyd" d="${gp(h.geom)}"/>`).join("");
+  if($("#chkLbl").checked) s+=L.map(l=>`<text class="lotlbl" x="${px(l.centroide[0])}" y="${py(l.centroide[1])+.003}">${l.lote}</text>`).join("");
+  svg.innerHTML=s;
+  svg.querySelectorAll(".lot").forEach(p=>{
+    p.addEventListener("click",()=>select(p.dataset.l));
+    p.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(p.dataset.l)}});
+    p.addEventListener("mousemove",e=>tip(e,p.dataset.l)); p.addEventListener("mouseleave",()=>$("#tip2").style.opacity=0);
+  });
+  legend();
+}
+function tip(e,id){const l=L.find(x=>x.lote===id),t=$("#tip2"),r=$(".mapwrap").getBoundingClientRect();
+  t.innerHTML=`<b>${l.nome}</b> · ${f(l.area_ha,0)} ha · PFI ${f(l.pfiPct,0)}%`;t.style.left=(e.clientX-r.left+12)+"px";t.style.top=(e.clientY-r.top+12)+"px";t.style.opacity=1}
+function legend(){
+  const m=$("#modo").value; let h="";
+  if(m==="zona") h=[...new Set(L.map(l=>l.zdom))].map(z=>`<span><i style="background:${ZCOR[z]}"></i>${z} (cor do lote)</span>`).join("");
+  else{const v=L.map(metric),lo=Math.min(...v),hi=Math.max(...v),u={area:" ha",pfi:"%",app:"%",comp:""}[m],d={area:0,pfi:0,app:1,comp:2}[m];
+    h=`<span><i style="background:${scale(0)}"></i>${f(lo,d)}${u}</span><span><i style="background:${scale(.5)}"></i>${f((lo+hi)/2,d)}${u}</span><span><i style="background:${scale(1)}"></i>${f(hi,d)}${u}</span>`}
+  if($("#chkPfi").checked) h+=`<span><i style="background:#0b5c73;opacity:.5"></i>PFI (IFL 2020)</span>`;
+  if($("#chkZon").checked) h+=Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
+  if($("#chkHid").checked) h+=`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`;
+  $("#legenda").innerHTML=h;
+}
+
+/* detalhe */
+const infraPct=()=>+$("#infra").value;
+function detalhe(){
+  const el=$("#detalhe");
+  if(!sel){
+    el.innerHTML=`<h3>Visão geral</h3><p class="muted" style="margin-top:6px;font-size:15px">Selecione um lote no mapa.</p>
+    <dl class="dl"><dt>Área total</dt><dd>${f(TOT,2)} ha</dd><dt>Área média por lote</dt><dd>${f(TOT/L.length,0)} ha</dd>
+    <dt>PFI nos lotes</dt><dd>${f(TOT_PFI,0)} ha (${f(TOT_PFI/TOT*100,1)}%)</dd><dt>Área central mínima</dt><dd>${f(CORE,0)} ha</dd>
+    <dt>Cursos d’água</dt><dd>${f(TOT_HID,1)} km</dd><dt>APP estimada</dt><dd>${f(TOT_APP,0)} ha</dd></dl>
+    <div class="stack"><div class="callout" style="margin:0"><b>Contexto legal:</b> os lotes estão dentro da ${CTX.uc} (UC de uso sustentável), sob a CDRU 012/2022 SECT.</div>
+    <div class="callout" style="margin:0;border-color:var(--no)"><b>Atenção:</b> o zoneamento coloca os lotes em Uso Extensivo, não em Manejo Florestal. Confirmar no plano de gestão se o manejo madeireiro é permitido nessa zona.</div></div>`;
+    return;
+  }
+  const l=L.find(x=>x.lote===sel), liq=l.area_ha-l.app_ha-l.area_ha*infraPct()/100, al=[];
+  const pres=l.zlist.find(z=>z[0]==="Preservação");
+  if(l.zdom!=="Manejo Florestal") al.push(["Zona dominante: "+l.zdom+". Verificar se o manejo é permitido.",1]);
+  if(pres&&pres[1]>=.1) al.push(["Parte do lote ("+f(pres[1]/100*l.area_ha,1)+" ha) cai em zona de Preservação. Excluir do plano de corte.",1]);
+  if(l.comp<.3) al.push(["Forma alongada (compacidade "+f(l.comp,2)+"): perímetro de "+f(l.perim_m/1000,1)+" km para "+f(l.area_ha,0)+" ha. Mais borda, estrada e acesso difícil.",1]);
+  if(l.pfiPct>=99) al.push(["Lote inteiro em PFI: a área central mínima de "+f(l.core,0)+" ha sai daqui, e o resto exige EIR e inventário de 100%.",0]);
+  if(l.pfiPct<50) al.push(["Só "+f(l.pfiPct,0)+"% do lote é PFI: boa candidata a concentrar colheita sem tocar a área central.",0]);
+  if(!al.length) al.push(["Sem alerta geométrico ou de zoneamento neste lote.",0]);
+  el.innerHTML=`<h3>${l.nome}</h3><p class="muted" style="margin-top:4px;font-size:14px">${l.vertices} vértices · centroide ${f(l.centroide[1],4)}, ${f(l.centroide[0],4)}</p>
+  <dl class="dl"><dt>Área</dt><dd>${f(l.area_ha,2)} ha</dd><dt>Perímetro</dt><dd>${f(l.perim_m/1000,2)} km</dd>
+  <dt>PFI</dt><dd>${f(l.pfi_ha,0)} ha (${f(l.pfiPct,0)}%)</dd><dt>Área central mínima</dt><dd>${f(l.core,0)} ha</dd>
+  <dt>Cursos d’água</dt><dd>${f(l.hidro_km,1)} km</dd><dt>APP estimada</dt><dd>${f(l.app_ha,1)} ha (${f(l.appPct,1)}%)</dd>
+  <dt>Líquida (infra. ${f(infraPct(),1)}%)</dt><dd>${f(liq,0)} ha</dd><dt>Compacidade</dt><dd>${f(l.comp,2)}</dd></dl>
+  <div class="sub2">Zonas do zoneamento</div><div class="zbar">${l.zlist.map(z=>`<span title="${z[0]}" style="width:${z[1]}%;background:${ZCOR[z[0]]||"#999"}"></span>`).join("")}</div>
+  ${l.zlist.map(z=>`<div class="zrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${ZCOR[z[0]]||"#999"};margin-right:6px"></i>${z[0]}</span><b>${f(z[1],z[1]<1?2:1)}%</b></div>`).join("")}
+  <div class="stack">${al.map(a=>`<div class="callout" style="margin:0;${a[1]?"border-color:var(--no)":""}">${a[0]}</div>`).join("")}</div>
+  <div style="margin-top:12px"><button class="seg" id="limpar" type="button" style="padding:7px 12px;font:600 14px var(--font-body);cursor:pointer;color:var(--muted)">Voltar à visão geral</button></div>`;
+  $("#limpar").onclick=()=>select(null);
+}
+function select(id){sel=(id===sel?null:id);drawMap();detalhe();tabela()}
+
+/* tabela */
+function tabela(){
+  const infra=infraPct()/100, rows=L.map(l=>({...l,liq:l.area_ha-l.app_ha-l.area_ha*infra}));
+  const cols=[["lote","Lote"],["area_ha","Área (ha)"],["pfi_ha","PFI (ha)"],["core","Área central (ha)"],["app_ha","APP (ha)"],["liq","Líquida (ha)"],["comp","Compac."],["zdom","Zona dominante"]];
+  rows.sort((a,b)=>(typeof a[sortKey]==="string"?a[sortKey].localeCompare(b[sortKey]):a[sortKey]-b[sortKey])*sortDir);
+  $("#tabela").innerHTML="<thead><tr>"+cols.map(c=>`<th class="sortable" data-k="${c[0]}" tabindex="0">${c[1]}</th>`).join("")+"</tr></thead><tbody>"+
+   rows.map(r=>`<tr class="row${sel===r.lote?" sel":""}" data-l="${r.lote}"><td>${r.nome}</td><td>${f(r.area_ha,2)}</td><td>${f(r.pfi_ha,0)}</td><td>${f(r.core,0)}</td><td>${f(r.app_ha,1)}</td><td>${f(r.liq,0)}</td><td>${f(r.comp,2)}</td><td>${r.zdom}</td></tr>`).join("")+
+   `<tr><td><b>Total</b></td><td><b>${f(TOT,2)}</b></td><td><b>${f(TOT_PFI,0)}</b></td><td><b>${f(CORE,0)}</b></td><td><b>${f(TOT_APP,1)}</b></td><td><b>${f(rows.reduce((s,r)=>s+r.liq,0),0)}</b></td><td></td><td></td></tr></tbody>`;
+  $("#tabela").querySelectorAll("th").forEach(t=>{const go=()=>{const k=t.dataset.k;sortDir=(sortKey===k?-sortDir:1);sortKey=k;tabela()};t.onclick=go;t.onkeydown=e=>{if(e.key==="Enter")go()};
+    if(t.dataset.k===sortKey)t.setAttribute("aria-sort",sortDir>0?"ascending":"descending")});
+  $("#tabela").querySelectorAll("tr.row").forEach(t=>t.onclick=()=>select(t.dataset.l));
+}
+
+/* PFI por lote */
+function pfiBars(){
+  $("#pfiBars").innerHTML=L.map(l=>`<div class="hbar" style="grid-template-columns:90px minmax(0,1fr) 150px"><span class="lab">${l.nome}</span><span class="track"><span class="fill" style="width:${l.pfiPct}%"></span></span><span class="v">${f(l.pfiPct,0)}% · ${f(l.core,0)} ha</span></div>`).join("");
+  $("#reqTxt").textContent="Área central mínima nos lotes: "+f(CORE,0)+" ha, ou "+f(CORE/TOT*100,1)+"% da área total ("+PCT+"% de "+f(TOT_PFI,0)+" ha de PFI)";
+}
+
+/* simulador */
+const SIM={upa:0,ciclo:30,prod:0};
+function sim(){
+  const ciclo=+$("#ciclo").value,it=+$("#intens").value,infra=+$("#infra").value,cons=+$("#cons").value,ovl=$("#ovl").checked;
+  $("#vCiclo").textContent=ciclo+" anos";$("#vInt").textContent=it+" m³/ha";$("#vInfra").textContent=f(infra,1)+"%";$("#vCons").textContent=cons+"%";
+  const prot=ovl?Math.max(CORE,TOT_APP):CORE+TOT_APP;
+  const prod=TOT-prot-TOT*infra/100-TOT*cons/100, upa=prod/ciclo, va=upa*it;
+  SIM.upa=upa;SIM.ciclo=ciclo;SIM.prod=prod;
+  $("#saida").innerHTML=[
+   [f(prod,0)+" ha","Área produtiva líquida ("+f(prod/TOT*100,1)+"% do total)"],
+   [f(CORE,0)+" ha","Área central de PFI (sem exploração)"],
+   [f(upa,0)+" ha/ano","Área de colheita anual (UPA)"],
+   [f(va,0)+" m³/ano","Volume anual no cenário"],
+   [f(va*ciclo,0)+" m³","Volume em um ciclo de "+ciclo+" anos"],
+   [f(it/ciclo,2)+" m³/ha/ano","Taxa média de colheita"]
+  ].map(o=>`<div><div class="v">${o[0]}</div><div class="l">${o[1]}</div></div>`).join("");
+  const a=[];
+  a.push(["A taxa de colheita ("+f(it/ciclo,2)+" m³/ha/ano) precisa ficar abaixo da capacidade de reposição da floresta (5.2.1 e 5.2.2, p. 39). Sem o incremento medido nas parcelas permanentes, o cenário é só aritmética.",0]);
+  if(va>5000) a.push(["Volume anual acima de 5.000 m³: fora do teto de baixa intensidade do SLIMF (Tabela 1, p. 12). Vale o regime de grande escala, com o 9.2.8.",1]);
+  if(it>=28) a.push(["Intensidade perto do teto de 30 m³/ha da IN MMA 5/2006. Em auditoria, intensidade alta pede justificativa e monitoramento forte.",1]);
+  if(ovl) a.push(["Com a área central sobre as APPs, a área protegida total cai de "+f(CORE+TOT_APP,0)+" para "+f(prot,0)+" ha. A norma só deixa de contar APP fora da área central, então a sobreposição depende de onde a área central for desenhada.",0]);
+  $("#alertaSim").innerHTML=a.map(x=>`<div class="callout" style="margin:0;${x[1]?"border-color:var(--no)":""}">${x[0]}</div>`).join("");
+  inv(); detalhe(); tabela();
+}
+
+/* inventário (jornada) */
+const INV=[
+ {t:"Planejamento e divisão em UPA e UT",s:"A ordem do ciclo",
+  goal:"Dividir a área produtiva em Unidades de Produção Anual, uma por ano do ciclo, e subdividir cada UPA em Unidades de Trabalho de tamanho operacional.",
+  fsc:["7.2.1 — plano de manejo com ações e procedimentos consistentes (p. 47)","5.2.1 — nível de colheita baseado nas melhores informações disponíveis (p. 39)","O CAP é calculado por unidade de trabalho, com base no inventário a 100% (glossário, p. 115)"],
+  area:["Os lotes de ~2.000 ha não são UPAs: com ciclo de 30 anos, a UPA fica na casa de 600 ha.","A área central de PFI sai antes da divisão: nenhuma UPA pode cair sobre ela.","O Lote 13, alongado, precisa de desenho próprio das UT."]},
+ {t:"Delimitação e picadas",s:"Limites em campo",
+  goal:"Abrir linhas de orientação e marcar em campo os limites de cada UT, georreferenciando os vértices e as APPs encontradas.",
+  fsc:["1.2.3 — limites da UMF disponíveis em mapas ou croquis (p. 21)","6.1.1 — valores ambientais identificados dentro e fora da UMF (p. 41)"],
+  area:["As linhas cruzam os "+f(TOT_HID,0)+" km de cursos d’água dos lotes; nascentes e igarapés fora da base do IBGE entram na APP.","A área central de PFI e a rede de conservação precisam ficar materializadas no mapa e no campo."]},
+ {t:"Identificação e medição das árvores",s:"A etapa mais cara",
+  goal:"Plaquetear cada árvore de espécie comercial acima do diâmetro mínimo e medir DAP, altura comercial e qualidade do fuste, com coordenada e espécie.",
+  fsc:["8.1.1 — procedimentos de monitoramento documentados (p. 51)","8.5.1 — sistema de rastreamento dos produtos comercializados (p. 53)"],
+  area:["O custo cresce com a densidade de árvores por hectare e com o acesso por rio (rota fluvial de cerca de 59 km no croqui).","Com "+f(TOT_PFI/TOT*100,0)+"% da área em PFI, o inventário de 100% é exigência do 9.2.5, não opção."]},
+ {t:"Identificação botânica e curadoria",s:"Espécie certa no DOF",
+  goal:"Conferir nomes populares e científicos com especialista, corrigindo sinonímias e espécies confundidas.",
+  fsc:["Anexo C — lista de espécies raras e ameaçadas, portarias do MMA e do ICMBio (p. 84)","6.1.1 e 9.1.1 — valores ambientais e AVC avaliados e registrados (p. 41 e 55)"],
+  area:["Espécie ameaçada ou proibida sai do corte e entra na lista de proteção, o que reduz o volume do simulador na prática.","Erro de espécie vira risco de rastreabilidade na cadeia de custódia."]},
+ {t:"Cálculo de volume e estatística",s:"Do inventário ao CAP",
+  goal:"Calcular volume por árvore e por espécie, fitossociologia e erro de amostragem quando houver amostragem.",
+  fsc:["5.2.1 e 5.2.2 — colheita não excede a capacidade de reposição da floresta (p. 39)","Anexo F — requisitos de monitoramento: regeneração, solo, água, PFI (p. 88)"],
+  area:["Substitui a intensidade hipotética do simulador por número medido.","Se o volume por hectare passar de 30 m³, o plano reduz a intensidade para ficar na IN MMA 5/2006."]},
+ {t:"Seleção de árvores de corte e retenção",s:"O que fica em pé",
+  goal:"Escolher as árvores de corte pelo diâmetro mínimo de corte e deixar porta-sementes e remanescentes por espécie.",
+  fsc:["10.1.1 — áreas colhidas protegidas para promover regeneração (p. 61)","P6 — valores e impactos ambientais (p. 41–46)"],
+  area:["O percentual mínimo de retenção por espécie vem da norma do órgão licenciador; confirme a versão vigente.","Espécies raras no inventário podem ficar totalmente fora do corte."]},
+ {t:"Mapa de infraestrutura e EIR",s:"Estradas e pátios fora da área central",
+  goal:"Planejar estradas, pátios e ramais de arraste sobre o mapa das árvores, evitando APP, declives fortes e a área central de PFI.",
+  fsc:["9.2.5 — exploração e estradas só em áreas não-centrais, com EIR conforme CONAMA 406/2009 (p. 57–58)","Nenhuma PFI reduzida abaixo de 50.000 ha na paisagem (9.2.5)"],
+  area:["Aqui se confirma a infraestrutura de "+f(infraPct(),1)+"% do simulador.","Estrada nova em PFI é o ponto que mais pesa na auditoria do 9.2.5. Em acesso fluvial, o porto e o transporte pelo rio entram no mapa."]},
+ {t:"Submissão e autorização",s:"Sem licença, sem colheita",
+  goal:"Entregar o inventário e o Plano Operacional Anual ao órgão licenciador para liberação da UPA do ano.",
+  fsc:["P1 — cumprimento das leis; 1.1.1 registro legal documentado e incontestável (p. 21)","7.4.2 — planejamento revisado com resultados de auditorias (p. 49)"],
+  area:["Em UC estadual, a análise passa pelo órgão gestor da unidade. Contar o prazo de análise antes da safra.","O volume liberado precisa bater com o inventariado e com o CAP."]},
+ {t:"Colheita, monitoramento e pós-colheita",s:"Provar que funciona",
+  goal:"Acompanhar o corte, medir danos e instalar parcelas permanentes para medir crescimento e regeneração.",
+  fsc:["8.3.1 — resultados analisados e usados no manejo adaptativo (p. 52)","8.2.1 (SLIMF) — inventário florestal contínuo no monitoramento (p. 52)","8.4.1 — resumo público dos principais resultados (NÃO-SLIMF, p. 53)"],
+  area:["Sem parcelas permanentes, a taxa de colheita do simulador não se comprova em auditoria.","Monitorar a PFI e a área central faz parte do Anexo F."]}
+];
+let jAt=0;
+function jRender(i){
+  jAt=(i+INV.length)%INV.length; const x=INV[jAt];
+  $("#journey").innerHTML=INV.map((y,k)=>`<button type="button" class="jstep" data-j="${k}" aria-pressed="${k===jAt}"><span class="jd">ETAPA ${String(k+1).padStart(2,"0")}</span><b>${y.t}</b><small>${y.s}</small></button>`).join("");
+  $("#jdetail").innerHTML=`<h3>${jAt+1}. ${x.t}</h3><p class="muted">${x.goal}</p><div class="cols"><div class="box"><h4>Implicação para o FSC e a licença</h4><ul>${x.fsc.map(r=>`<li>${r}</li>`).join("")}</ul></div><div class="box"><h4>Implicação para esta área</h4><ul>${x.area.map(r=>`<li>${r}</li>`).join("")}</ul></div></div><p class="src">Indicadores e páginas conforme FSC-STD-BRA-02.1-2026. Percentuais mínimos de retenção e diâmetro mínimo seguem a norma do órgão licenciador.</p>`;
+}
+function inv(){
+  const d=+$("#dens").value; $("#vDens").textContent=d+" árv./ha"; const n=SIM.upa*d;
+  $("#saidaInv").innerHTML=[[f(SIM.upa,0)+" ha","UPA anual a inventariar"],[f(n,0)+" árvores","Plaquetas e medições por UPA"],[f(n*SIM.ciclo,0)+" árvores","Inventário do ciclo inteiro"],[SIM.ciclo+" UPAs","Uma por ano do ciclo"]]
+   .map(o=>`<div><div class="v">${o[0]}</div><div class="l">${o[1]}</div></div>`).join("");
+  jRender(jAt);
+}
+$("#journey").addEventListener("click",e=>{const b=e.target.closest("[data-j]");if(b)jRender(+b.dataset.j)});
+$("#jprev").onclick=()=>jRender(jAt-1); $("#jnext").onclick=()=>jRender(jAt+1);
+
+/* princípios */
+const PR=[
+ ["1","Cumprimento das leis","8 critérios · pág. 21","atenção",
+  "Lotes dentro da "+CTX.uc+" (CDRU 012/2022 SECT); o zoneamento enquadra 99,7% em Uso Extensivo.",
+  "Plano de gestão da UC e regra da zona para manejo madeireiro; autorização do órgão licenciador (PMFS); regularidade do CAR e da CDRU; atos constitutivos e ata da ASPAFEMP."],
+ ["2","Direitos dos trabalhadores e condições de trabalho","6 critérios · pág. 25","sem dado","Sem dado no shape.","Quadro de pessoal da operação, NR-31, EPI, treinamento (Anexo E), política de saúde e segurança."],
+ ["3","Direitos dos Povos Indígenas","6 critérios · pág. 30","verificar","Nenhuma terra indígena aparece nas bases da pasta.","Consulta à FUNAI sobre terras indígenas e povos isolados na região; identificação de povos afetados (3.1.1)."],
+ ["4","Relações com a comunidade","8 critérios · pág. 34","atenção",CTX.com20+" comunidades a até 20 km; a mais próxima a "+f(CTX.comProx,1)+" km.","Identificação de comunidades e povos tradicionais (4.1.1), mapeamento de usos (castanha, caça, pesca, roças), reuniões registradas, mecanismo de queixas, acordos."],
+ ["5","Benefícios da floresta","5 critérios · pág. 39","em andamento","O simulador dá a ordem de grandeza da produção anual.","Inventário a 100%, CAP por unidade de trabalho, viabilidade econômica, colheita abaixo da reposição (5.2.1 e 5.2.2)."],
+ ["6","Valores e impactos ambientais","10 critérios · pág. 41","atenção","APP estimada em "+f(TOT_APP,0)+" ha ("+f(TOT_APP/TOT*100,1)+"%) e "+f(TOT_HID,0)+" km de cursos d’água.","Valores ambientais dentro e fora da UMF (6.1.1), mapa de APP e nascentes de campo, rede de áreas de conservação, fauna ameaçada, plano de resíduos."],
+ ["7","Planejamento do manejo","6 critérios · pág. 47","em andamento","UPAs de cerca de 600 ha no cenário padrão.","Plano com ações e procedimentos (7.2.1), metas verificáveis (7.3.1), resumo público do plano (7.5.1), cronograma do ciclo."],
+ ["8","Monitoramento e avaliação","5 critérios · pág. 51","sem dado","Sem dado.","Procedimentos documentados (8.1.1), parcelas permanentes, análise de resultados (8.3.1), rastreamento do produto (8.5.1)."],
+ ["9","Atributos de Alto Valor de Conservação 2.1","4 critérios · pág. 55","atenção",
+  "PFI em "+f(TOT_PFI/TOT*100,0)+"% da área; classe Apta, 20%: área central mínima de "+f(CORE,0)+" ha. FLONA do Pau-Rosa a "+f(CTX.flona,1)+" km e Parque Nacional da Amazônia a "+CTX.parna+" km.",
+  "Avaliação dos seis AVC (9.1.1), mapa de PFI (9.1.2), área central (9.2.4.1), EIR em áreas não-centrais (9.2.5), rede de conservação ligada à PFI (9.2.7), compromissos na esfera de influência (9.2.8)."],
+ ["10","Implementação das atividades de manejo","12 critérios · pág. 61","atenção","Acesso fluvial; a infraestrutura de "+f(infraPct(),1)+"% do simulador ainda é hipótese.","Planejamento de estradas e trilhas fora da área central, EIR, proteção das áreas colhidas (10.1.1), resíduos (10.12.1), controle de caça e de acesso, plano de prevenção ao fogo."]
+];
+const CHIPC={"atenção":"warn","sem dado":"na","verificar":"na","em andamento":"ok"};
+function fsc(){
+  let st={};try{st=JSON.parse(localStorage.getItem("fsc_aspafemp")||"{}")}catch(e){}
+  const open=[...document.querySelectorAll("#lista details")].filter(d=>d.open).map(d=>d.dataset.p);
+  $("#lista").innerHTML=PR.map(p=>`<details class="pr${st[p[0]]?" done":""}" data-p="${p[0]}"${open.includes(p[0])?" open":""}>
+    <summary><span class="pr-n">${p[0]}</span><span><span class="pr-t">${p[1]}</span><span class="pr-s" style="display:block">${p[2]} · ${p[3]}${st[p[0]]?" · evidências reunidas":""}</span></span><span class="chev">›</span></summary>
+    <div class="pr-body"><p class="quote">${p[4]}</p>
+    <ul class="criteria"><li><b>Evidências a reunir:</b> ${p[5]}</li></ul>
+    <label class="chk"><input type="checkbox" data-p="${p[0]}" ${st[p[0]]?"checked":""}> Evidências reunidas</label></div></details>`).join("");
+  const n=Object.values(st).filter(Boolean).length;
+  $("#progTxt").textContent=n+" de 10 Princípios com evidências reunidas";$("#progBar").style.width=(n*10)+"%";$("#progN").textContent=n;
+  $("#lista").querySelectorAll("input").forEach(i=>i.onchange=()=>{st[i.dataset.p]=i.checked;try{localStorage.setItem("fsc_aspafemp",JSON.stringify(st))}catch(e){}fsc()});
+}
+$("#zerar").onclick=()=>{try{localStorage.removeItem("fsc_aspafemp")}catch(e){}fsc()};
+
+/* pendências */
+function pend(){
+  const nums=L.map(l=>+l.lote),miss=[];for(let i=Math.min(...nums);i<=Math.max(...nums);i++)if(!nums.includes(i))miss.push(String(i).padStart(2,"0"));
+  const long=L.filter(l=>l.comp<.3).map(l=>l.nome).join(", ");
+  const it=[
+   `<b>Enquadramento na UC:</b> confirmar no plano de gestão da ${CTX.uc} se o manejo madeireiro empresarial cabe na zona de Uso Extensivo. A zona de Manejo Florestal do zoneamento não coincide com nenhum dos 10 lotes. Princípio 1.`,
+   `<b>Paisagem e PFI:</b> pedir o shapefile oficial do Anexo H ao FSC (info@fsc.org.br) para confirmar a classe Apta e trocar o IFL 2020 pelo mapa de PFI de 01/01/2017. Hoje a área central mínima de ${f(CORE,0)} ha é triagem.`,
+   `<b>Posição da área central:</b> definir onde ficam os ${f(CORE,0)} ha, em bloco único se possível, ligados à rede de conservação (9.2.7). Os Lotes 06, 07 e 08 têm mais de 85% de PFI; o Lote 03 tem ${f(L.find(l=>l.lote==="03").pfiPct,0)}%.`,
+   `<b>Lotes fora do recorte:</b> este recorte de 20.000 ha tem os lotes 03 a 09, 12, 13 e 15. Faltam ${miss.join(", ")} na faixa 03–15. O contorno original de 26.362 ha usava outra seleção (01–04 e 08–16), então a lista de lotes mudou entre as versões.`,
+   `<b>Forma dos lotes:</b> ${long||"nenhum lote"} tem forma muito alongada (compacidade abaixo de 0,3). Rever a divisão em unidades de produção.`,
+   `<b>APP:</b> faixa de 30 m calculada sobre a hidrografia do IBGE. Nascentes (raio de 50 m) e igarapés pequenos fora da base exigem levantamento de campo e imagem de alta resolução.`,
+   `<b>Comunidades:</b> nenhuma está dentro dos lotes, mas ${CTX.com20} ficam a até 20 km. O FSC pede identificação, diálogo e acordos documentados (Princípios 3 e 4). A camada de comunidades não traz número de famílias.`,
+   `<b>Camada UPF_2000HA:</b> as 10 UPFs de 2.000 ha da pasta ficam ao sul e não se sobrepõem a nenhum destes lotes. Parece versão antiga; não entrou no painel.`,
+   `<b>Dados que a pasta não tem:</b> inventário florestal, nascentes, avaliação de AVC, estradas e pátios existentes, uso atual do solo, vizinhos e sobreposições com CAR de terceiros.`
+  ];
+  $("#pend").innerHTML=it.map(i=>`<li style="margin:8px 0">${i}</li>`).join("");
+}
+
+["modo","chkPfi","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
+["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
+pfiBars();drawMap();fsc();pend();sim();
+</script>
+</body>
+</html>
