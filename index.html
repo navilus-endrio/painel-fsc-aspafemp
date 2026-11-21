@@ -1389,11 +1389,15 @@ function tip(e,id){const l=L.find(x=>x.lote===id),t=$("#tip2"),r=$(".mapwrap").g
   t.innerHTML=`<b>${l.nome}</b> · ${f(l.area_ha,0)} ha · PFI ${f(l.pfiPct,0)}%`;t.style.left=(e.clientX-r.left+12)+"px";t.style.top=(e.clientY-r.top+12)+"px";t.style.opacity=1}
 function legend(){
   const m=$("#modo").value; let h="";
-  if(m==="zona") h=[...new Set(L.map(l=>l.zdom))].map(z=>`<span><i style="background:${ZCOR[z]}"></i>${z} (cor do lote)</span>`).join("");
+  if(m==="zona"){
+    const tz={};L.forEach(l=>Object.entries(l.zonas).forEach(([z,v])=>tz[z]=(tz[z]||0)+v));
+    const dom=new Set(L.map(l=>l.zdom)), tt=Object.values(tz).reduce((s,v)=>s+v,0);
+    h=Object.entries(tz).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([z,v])=>`<span><i style="background:${ZCOR[z]||"#999"}"></i><b>${z}</b>${dom.has(z)?" (zona dominante)":""}: ${f(v/tt*TOT,v/tt*TOT<10?1:0)} ha, ${f(v/tt*100,v/tt<.01?2:1)}%</span>`).join("");
+  }
   else{const v=L.map(metric),lo=Math.min(...v),hi=Math.max(...v),u={area:" ha",pfi:"%",app:"%",comp:""}[m],d={area:0,pfi:0,app:1,comp:2}[m];
     h=`<span><i style="background:${scale(0)}"></i>${f(lo,d)}${u}</span><span><i style="background:${scale(.5)}"></i>${f((lo+hi)/2,d)}${u}</span><span><i style="background:${scale(1)}"></i>${f(hi,d)}${u}</span>`}
   if($("#chkPfi").checked) h+=`<span><i style="background:#0b5c73;opacity:.5"></i>PFI (IFL 2020)</span>`;
-  if($("#chkZon").checked) h+=Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
+  if($("#chkZon").checked&&m!=="zona") h+=Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
   if($("#chkHid").checked) h+=`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`;
   $("#legenda").innerHTML=h;
 }
@@ -1597,6 +1601,7 @@ function siglar(){
   });
 }
 ["modo","chkPfi","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
+$("#modo").addEventListener("change",()=>{if($("#modo").value==="zona"){$("#chkZon").checked=true;$("#chkPfi").checked=false;drawMap()}});
 ["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
 pfiBars();drawMap();fsc();pend();sim();siglar();
 new MutationObserver(()=>{clearTimeout(window._sg);window._sg=setTimeout(siglar,50)}).observe(document.body,{childList:true,subtree:true});
