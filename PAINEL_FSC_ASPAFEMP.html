@@ -1051,6 +1051,9 @@ tr.row{cursor:pointer} tr.row:hover td{background:var(--sunk)} tr.row.sel td{bac
 details.pr.done{border-color:var(--accent)}
 .chk{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14.5px;cursor:pointer}
 .k2{font:700 12px var(--font-body);text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin:12px 0 4px}
+.sg{border-bottom:1px dotted var(--accent);cursor:help;position:relative;text-decoration:none}
+.sg:focus{outline:2px solid var(--accent);outline-offset:1px;border-radius:3px}
+.sg:hover::after,.sg:focus::after{content:attr(data-t);position:absolute;left:0;bottom:calc(100% + 6px);z-index:20;width:max-content;max-width:260px;background:var(--ink);color:var(--solid);font:500 12.5px/1.4 var(--font-body);letter-spacing:0;text-transform:none;padding:6px 9px;border-radius:7px;white-space:normal;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .nowrap{white-space:nowrap}
 .gmap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
 .gmap>*{min-width:0}
@@ -1129,6 +1132,7 @@ details.pr.done{border-color:var(--accent)}
           <label><input type="checkbox" id="chkLbl" checked> Rótulos</label>
         </div>
         <div class="leg" id="legenda"></div>
+        <p class="src siglas-note"><b>Compacidade:</b> 4π × área ÷ perímetro². Vale 1,0 num círculo e cerca de 0,8 num quadrado; abaixo de 0,3 a forma é alongada, com mais borda, estrada e acesso difícil. Indicador de triagem, não exigência do FSC.</p>
         <p class="src siglas-note"><b>Siglas:</b> PFI = Paisagem Florestal Intacta; IFL = Intact Forest Landscapes; APP = Área de Preservação Permanente.</p>
       </div>
       <div class="panel" id="detalhe"></div>
@@ -1576,9 +1580,26 @@ function pend(){
   $("#pend").innerHTML=it.map(i=>`<li style="margin:8px 0">${i}</li>`).join("");
 }
 
+
+/* notas de apoio: siglas com explicação ao passar o mouse, tocar ou focar */
+const SG={PFI:"Paisagem Florestal Intacta",IFL:"Intact Forest Landscapes (mapa de paisagens florestais intactas)",APP:"Área de Preservação Permanente",UPA:"Unidade de Produção Anual",UT:"Unidade de Trabalho",UMF:"Unidade de Manejo Florestal",UC:"Unidade de Conservação",CDRU:"Concessão de Direito Real de Uso",AVC:"Atributo de Alto Valor de Conservação",CAN:"Rede de Áreas de Conservação",EIR:"Exploração de Impacto Reduzido",CAP:"Corte Anual Permitido",SLIMF:"Small and Low Intensity Managed Forests (florestas pequenas ou de baixa intensidade)",IMA:"Incremento Médio Anual",POA:"Plano Operacional Anual",PMFS:"Plano de Manejo Florestal Sustentável",DAP:"Diâmetro à altura do peito (1,30 m)",CONAMA:"Conselho Nacional do Meio Ambiente",CAR:"Cadastro Ambiental Rural",CLPI:"Consentimento livre, prévio e informado",FSC:"Forest Stewardship Council",FUNAI:"Fundação Nacional dos Povos Indígenas",ICMBio:"Instituto Chico Mendes de Conservação da Biodiversidade",FLONA:"Floresta Nacional",NR:"Norma Regulamentadora",EPI:"Equipamento de Proteção Individual"};
+function siglar(){
+  const re=new RegExp("(?<![\wÀ-ú-])("+Object.keys(SG).join("|")+")(?![\wÀ-ú])","g");
+  document.querySelectorAll("section p,section li,section h3,section .lede,section label,section .l,section .callout,section small,section dd,section summary,section .quote").forEach(el=>{
+    if(el.closest(".siglas-note,#siglas,table,.sg,svg,select,button,h1")) return;
+    const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),ns=[];let n;
+    while(n=w.nextNode()){ if(!n.parentElement.closest(".sg,script,style,b.k") && re.test(n.nodeValue)) ns.push(n); re.lastIndex=0; }
+    ns.forEach(n=>{
+      const fr=document.createDocumentFragment();let last=0,m;re.lastIndex=0;const s=n.nodeValue;
+      while(m=re.exec(s)){ fr.append(s.slice(last,m.index)); const a=document.createElement("span");a.className="sg";a.tabIndex=0;a.dataset.t=m[1]+": "+SG[m[1]];a.textContent=m[1];fr.append(a);last=m.index+m[1].length; }
+      fr.append(s.slice(last)); n.replaceWith(fr);
+    });
+  });
+}
 ["modo","chkPfi","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
 ["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
-pfiBars();drawMap();fsc();pend();sim();
+pfiBars();drawMap();fsc();pend();sim();siglar();
+new MutationObserver(()=>{clearTimeout(window._sg);window._sg=setTimeout(siglar,50)}).observe(document.body,{childList:true,subtree:true});
 </script>
 </body>
 </html>
