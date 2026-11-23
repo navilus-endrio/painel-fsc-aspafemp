@@ -416,7 +416,7 @@ function detalhe(){
     <dt>Compacidade</dt><dd>${f(4*Math.PI*TOT*1e4/Math.pow(U.perim_km*1000,2),2)}</dd></dl>
     <div class="sub2">Zonas do zoneamento</div><div class="zbar">${zs.map(([z,v])=>`<span title="${z}" style="width:${v/zsum*100}%;background:${ZCOR[z]||"#999"}"></span>`).join("")}</div>
     ${zs.map(([z,v])=>`<div class="zrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${ZCOR[z]||"#999"};margin-right:6px"></i>${z}</span><b>${f(v/zsum*100,v/zsum<.01?2:1)}%</b></div>`).join("")}
-    <div class="stack"><div class="callout" style="margin:0">Soma dos lotes, sem as divisas internas. Frestas mínimas de digitalização entre lotes vizinhos foram fechadas ao mesclar.${U.furos?` O contorno tem ${U.furos} vazio${U.furos>1?"s":""} interno${U.furos>1?"s":""} (área fora dos lotes, cercada por eles), mostrado${U.furos>1?"s":""} em branco no mapa.`:""}</div></div>`;
+    <div class="stack"><div class="callout" style="margin:0">Soma dos lotes, sem as divisas internas. Frestas e vazios internos entre lotes vizinhos foram preenchidos ao mesclar; a área informada é a soma dos lotes.</div></div>`;
     return;
   }
   if(!sel){
