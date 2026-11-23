@@ -1057,7 +1057,9 @@ details.pr.done{border-color:var(--accent)}
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .vtab{font:600 14px var(--font-body);padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--glass-strong);color:var(--muted);cursor:pointer}
 .vtab.on{background:var(--accent);color:var(--solid);border-color:var(--accent)}
-.uni{fill:#1f7a55;fill-opacity:.5;stroke:var(--ink);stroke-width:.0022;stroke-linejoin:round}
+.uni{fill:#cfe3d6;fill-opacity:.6;stroke:none}
+.uni-out{fill:none;stroke:var(--ink);stroke-width:.0022;stroke-linejoin:round;pointer-events:none}
+.lot.nolin{stroke:none;cursor:default;pointer-events:none}
 .nowrap{white-space:nowrap}
 .gmap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
 .gmap>*{min-width:0}
@@ -1379,8 +1381,10 @@ function drawMap(){
   const svg=$("#mapa"); svg.setAttribute("viewBox",VB.join(" ")); let s="";
   if($("#chkZon").checked) s+=DATA.zoneamento.map(z=>`<path d="${gp(z.geom)}" fill="${ZCOR[z.zona]||"#ccc"}" fill-opacity=".55"/>`).join("");
   if($("#chkPfi").checked) s+=`<path d="${gp(DATA.pfi)}" fill="#0b5c73" fill-opacity=".32" stroke="#0b5c73" stroke-opacity=".5" stroke-width=".0008"/>`;
-  if(vista==="total"){const U=DATA.uniao;s+=`<path class="uni" fill-rule="evenodd" d="${U.polys.map(p=>p.map(rp).join("")).join("")}"/>`;}
-  else s+=L.map(l=>`<path class="lot${sel===l.lote?" sel":""}" data-l="${l.lote}" tabindex="0" role="button" aria-label="${l.nome}, ${f(l.area_ha,0)} hectares" d="${rp(l.ring)}" fill="${colorFor(l)}" fill-opacity=".62"/>`).join("");
+  const UD=DATA.uniao.polys.map(p=>p.map(rp).join("")).join("");
+  if(vista==="total") s+=`<path class="uni" d="${UD}"/>`;
+  s+=L.map(l=>`<path class="lot${vista==="total"?" nolin":(sel===l.lote?" sel":"")}" data-l="${l.lote}" ${vista==="total"?"":`tabindex="0" role="button" `}aria-label="${l.nome}, ${f(l.area_ha,0)} hectares" d="${rp(l.ring)}" fill="${colorFor(l)}" fill-opacity=".62"/>`).join("");
+  if(vista==="total") s+=`<path class="uni-out" d="${UD}"/>`;
   if($("#chkHid").checked) s+=DATA.hidro.map(h=>`<path class="hyd" d="${gp(h.geom)}"/>`).join("");
   if($("#chkLbl").checked&&vista!=="total") s+=L.map(l=>`<text class="lotlbl" x="${px(l.centroide[0])}" y="${py(l.centroide[1])+.003}">${l.lote}</text>`).join("");
   svg.innerHTML=s;
@@ -1395,7 +1399,7 @@ function tip(e,id){const l=L.find(x=>x.lote===id),t=$("#tip2"),r=$(".mapwrap").g
   t.innerHTML=`<b>${l.nome}</b> · ${f(l.area_ha,0)} ha · PFI ${f(l.pfiPct,0)}%`;t.style.left=(e.clientX-r.left+12)+"px";t.style.top=(e.clientY-r.top+12)+"px";t.style.opacity=1}
 function legend(){
   const m=$("#modo").value; let h="";
-  if(vista==="total"){ $("#legenda").innerHTML=`<span><i style="background:#1f7a55;opacity:.6"></i>Área total, lotes mesclados: ${f(TOT,0)} ha</span>`+($("#chkPfi").checked?`<span><i style="background:#0b5c73;opacity:.5"></i>PFI (IFL 2020)</span>`:"")+($("#chkHid").checked?`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`:""); return; }
+
   if(m==="zona"){
     const tz={};L.forEach(l=>Object.entries(l.zonas).forEach(([z,v])=>tz[z]=(tz[z]||0)+v));
     const dom=new Set(L.map(l=>l.zdom)), tt=Object.values(tz).reduce((s,v)=>s+v,0);
@@ -1403,6 +1407,7 @@ function legend(){
   }
   else{const v=L.map(metric),lo=Math.min(...v),hi=Math.max(...v),u={area:" ha",pfi:"%",app:"%",comp:""}[m],d={area:0,pfi:0,app:1,comp:2}[m];
     h=`<span><i style="background:${scale(0)}"></i>${f(lo,d)}${u}</span><span><i style="background:${scale(.5)}"></i>${f((lo+hi)/2,d)}${u}</span><span><i style="background:${scale(1)}"></i>${f(hi,d)}${u}</span>`}
+  if(vista==="total") h+=`<span><i style="background:none;border:2px solid var(--ink)"></i>Contorno da área total (${f(TOT,0)} ha)</span>`;
   if($("#chkPfi").checked) h+=`<span><i style="background:#0b5c73;opacity:.5"></i>PFI (IFL 2020)</span>`;
   if($("#chkZon").checked&&m!=="zona") h+=Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
   if($("#chkHid").checked) h+=`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`;
@@ -1622,7 +1627,7 @@ function siglar(){
 ["modo","chkPfi","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
 $("#modo").addEventListener("change",()=>{if($("#modo").value==="zona"){$("#chkZon").checked=true;$("#chkPfi").checked=false;drawMap()}});
 ["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
-document.querySelectorAll(".vtab").forEach(b=>b.addEventListener("click",()=>{vista=b.dataset.v;sel=null;document.querySelectorAll(".vtab").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});$("#modo").disabled=(vista==="total");drawMap();detalhe();tabela()}));
+document.querySelectorAll(".vtab").forEach(b=>b.addEventListener("click",()=>{vista=b.dataset.v;sel=null;document.querySelectorAll(".vtab").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});drawMap();detalhe();tabela()}));
 pfiBars();drawMap();fsc();pend();sim();siglar();
 new MutationObserver(()=>{clearTimeout(window._sg);window._sg=setTimeout(siglar,50)}).observe(document.body,{childList:true,subtree:true});
 </script>
