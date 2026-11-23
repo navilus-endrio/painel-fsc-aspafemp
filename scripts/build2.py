@@ -40,6 +40,19 @@ _mas = transform(_to4674, unary_union([_shape(s.__geo_interface__) for s in _sm.
 d['massas'] = [[[[round(x, 5), round(y, 5)] for x, y in pl.exterior.coords]] + [[[round(x, 5), round(y, 5)] for x, y in h.coords] for h in pl.interiors] for pl in (list(_mas.geoms) if _mas.geom_type == 'MultiPolygon' else [_mas]) if pl.geom_type == 'Polygon']
 d['massas_ha'] = round(transform(_a5880, _mas).area / 1e4, 1)
 print('massas ha', d['massas_ha'], len(d['massas']))
+from shapely.geometry import Point as _Pt
+_sn = shapefile.Reader(r"C:\Users\endrio\OneDrive\Documentos\1 Brandão Engenharia e Projetos\ASPAFEMP\SHAPES\HIDROGRAFIAS E APPS\Nascentes_APAT_ASPAFEMP.shp")
+_pts = set()
+for s in _sn.shapes():
+    for x_, y_ in s.points:
+        _pts.add((round(x_, 1), round(y_, 1)))
+_nas = []
+for x_, y_ in sorted(_pts):
+    lon, lat = _to4674(x_, y_)
+    if _u.contains(_Pt(lon, lat)):
+        _nas.append([round(lon, 5), round(lat, 5)])
+d['nascentes'] = _nas
+print('nascentes no shape', len(_pts), 'dentro dos lotes', len(_nas))
 t = r('template2.html')
 t = t.replace('/*CSS*/', r('ref/style.css')).replace('/*LOGO1*/', r('logo1.txt').strip()).replace('/*LOGO2*/', r('logo2.txt').strip())
 t = t.replace('/*DATA*/', json.dumps(d, ensure_ascii=False, separators=(',', ':')))
