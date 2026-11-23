@@ -48,6 +48,10 @@ details.pr.done{border-color:var(--accent)}
 .sg{border-bottom:1px dotted var(--accent);cursor:help;position:relative;text-decoration:none}
 .sg:focus{outline:2px solid var(--accent);outline-offset:1px;border-radius:3px}
 .sg:hover::after,.sg:focus::after{content:attr(data-t);position:absolute;left:0;bottom:calc(100% + 6px);z-index:20;width:max-content;max-width:260px;background:var(--ink);color:var(--solid);font:500 12.5px/1.4 var(--font-body);letter-spacing:0;text-transform:none;padding:6px 9px;border-radius:7px;white-space:normal;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.vtab{font:600 14px var(--font-body);padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--glass-strong);color:var(--muted);cursor:pointer}
+.vtab.on{background:var(--accent);color:var(--solid);border-color:var(--accent)}
+.uni{fill:#1f7a55;fill-opacity:.5;stroke:var(--ink);stroke-width:.0022;stroke-linejoin:round}
 .nowrap{white-space:nowrap}
 .gmap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
 .gmap>*{min-width:0}
@@ -109,6 +113,7 @@ details.pr.done{border-color:var(--accent)}
     </header>
     <div class="gmap">
       <div class="panel">
+        <div class="tabs" role="tablist" aria-label="Vista do mapa"><button type="button" role="tab" class="vtab on" data-v="lotes" aria-selected="true">Lotes</button><button type="button" role="tab" class="vtab" data-v="total" aria-selected="false">Área total (lotes mesclados)</button></div>
         <div class="mapwrap"><svg id="mapa" role="img" aria-label="Mapa dos lotes da ASPAFEMP"></svg><div id="tip2"></div></div>
         <div class="ctl">
           <label>Colorir por
@@ -343,7 +348,7 @@ L.forEach(l=>{
 });
 const TOT=L.reduce((s,l)=>s+l.area_ha,0), TOT_APP=L.reduce((s,l)=>s+l.app_ha,0), TOT_HID=L.reduce((s,l)=>s+l.hidro_km,0);
 const TOT_PFI=L.reduce((s,l)=>s+l.pfi_ha,0), CORE=TOT_PFI*PCT/100;
-let sel=null, sortKey="lote", sortDir=1;
+let sel=null, sortKey="lote", sortDir=1, vista="lotes";
 
 /* mapa */
 const lat0=-3.9, kx=Math.cos(lat0*Math.PI/180), px=x=>x*kx, py=y=>-y, bb=DATA.bbox, mg=.045;
@@ -368,9 +373,10 @@ function drawMap(){
   const svg=$("#mapa"); svg.setAttribute("viewBox",VB.join(" ")); let s="";
   if($("#chkZon").checked) s+=DATA.zoneamento.map(z=>`<path d="${gp(z.geom)}" fill="${ZCOR[z.zona]||"#ccc"}" fill-opacity=".55"/>`).join("");
   if($("#chkPfi").checked) s+=`<path d="${gp(DATA.pfi)}" fill="#0b5c73" fill-opacity=".32" stroke="#0b5c73" stroke-opacity=".5" stroke-width=".0008"/>`;
-  s+=L.map(l=>`<path class="lot${sel===l.lote?" sel":""}" data-l="${l.lote}" tabindex="0" role="button" aria-label="${l.nome}, ${f(l.area_ha,0)} hectares" d="${rp(l.ring)}" fill="${colorFor(l)}" fill-opacity=".62"/>`).join("");
+  if(vista==="total"){const U=DATA.uniao;s+=`<path class="uni" fill-rule="evenodd" d="${U.polys.map(p=>p.map(rp).join("")).join("")}"/>`;}
+  else s+=L.map(l=>`<path class="lot${sel===l.lote?" sel":""}" data-l="${l.lote}" tabindex="0" role="button" aria-label="${l.nome}, ${f(l.area_ha,0)} hectares" d="${rp(l.ring)}" fill="${colorFor(l)}" fill-opacity=".62"/>`).join("");
   if($("#chkHid").checked) s+=DATA.hidro.map(h=>`<path class="hyd" d="${gp(h.geom)}"/>`).join("");
-  if($("#chkLbl").checked) s+=L.map(l=>`<text class="lotlbl" x="${px(l.centroide[0])}" y="${py(l.centroide[1])+.003}">${l.lote}</text>`).join("");
+  if($("#chkLbl").checked&&vista!=="total") s+=L.map(l=>`<text class="lotlbl" x="${px(l.centroide[0])}" y="${py(l.centroide[1])+.003}">${l.lote}</text>`).join("");
   svg.innerHTML=s;
   svg.querySelectorAll(".lot").forEach(p=>{
     p.addEventListener("click",()=>select(p.dataset.l));
@@ -383,6 +389,7 @@ function tip(e,id){const l=L.find(x=>x.lote===id),t=$("#tip2"),r=$(".mapwrap").g
   t.innerHTML=`<b>${l.nome}</b> · ${f(l.area_ha,0)} ha · PFI ${f(l.pfiPct,0)}%`;t.style.left=(e.clientX-r.left+12)+"px";t.style.top=(e.clientY-r.top+12)+"px";t.style.opacity=1}
 function legend(){
   const m=$("#modo").value; let h="";
+  if(vista==="total"){ $("#legenda").innerHTML=`<span><i style="background:#1f7a55;opacity:.6"></i>Área total, lotes mesclados: ${f(TOT,0)} ha</span>`+($("#chkPfi").checked?`<span><i style="background:#0b5c73;opacity:.5"></i>PFI (IFL 2020)</span>`:"")+($("#chkHid").checked?`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`:""); return; }
   if(m==="zona"){
     const tz={};L.forEach(l=>Object.entries(l.zonas).forEach(([z,v])=>tz[z]=(tz[z]||0)+v));
     const dom=new Set(L.map(l=>l.zdom)), tt=Object.values(tz).reduce((s,v)=>s+v,0);
@@ -400,6 +407,18 @@ function legend(){
 const infraPct=()=>+$("#infra").value;
 function detalhe(){
   const el=$("#detalhe");
+  if(vista==="total"){
+    const U=DATA.uniao, zt={};L.forEach(l=>Object.entries(l.zonas).forEach(([z,v])=>zt[z]=(zt[z]||0)+v));const zs=Object.entries(zt).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]),zsum=zs.reduce((s,[,v])=>s+v,0);
+    el.innerHTML=`<h3>Área total</h3><p class="muted" style="margin-top:4px;font-size:14px">Os ${L.length} lotes mesclados num só polígono${U.partes>1?" ("+U.partes+" partes separadas)":""}.</p>
+    <dl class="dl"><dt>Área</dt><dd>${f(TOT,2)} ha</dd><dt>Perímetro externo</dt><dd>${f(U.perim_km,1)} km</dd><dt>Vértices do contorno</dt><dd>${f(U.vertices,0)}</dd>
+    <dt>PFI</dt><dd>${f(TOT_PFI,0)} ha (${f(TOT_PFI/TOT*100,1)}%)</dd><dt>Área central mínima</dt><dd>${f(CORE,0)} ha (${f(CORE/TOT*100,1)}%)</dd>
+    <dt>Cursos d’água</dt><dd>${f(TOT_HID,1)} km</dd><dt>APP estimada</dt><dd>${f(TOT_APP,0)} ha (${f(TOT_APP/TOT*100,1)}%)</dd>
+    <dt>Compacidade</dt><dd>${f(4*Math.PI*TOT*1e4/Math.pow(U.perim_km*1000,2),2)}</dd></dl>
+    <div class="sub2">Zonas do zoneamento</div><div class="zbar">${zs.map(([z,v])=>`<span title="${z}" style="width:${v/zsum*100}%;background:${ZCOR[z]||"#999"}"></span>`).join("")}</div>
+    ${zs.map(([z,v])=>`<div class="zrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${ZCOR[z]||"#999"};margin-right:6px"></i>${z}</span><b>${f(v/zsum*100,v/zsum<.01?2:1)}%</b></div>`).join("")}
+    <div class="stack"><div class="callout" style="margin:0">Soma dos lotes, sem as divisas internas. Frestas mínimas de digitalização entre lotes vizinhos foram fechadas ao mesclar.${U.furos?` O contorno tem ${U.furos} vazio${U.furos>1?"s":""} interno${U.furos>1?"s":""} (área fora dos lotes, cercada por eles), mostrado${U.furos>1?"s":""} em branco no mapa.`:""}</div></div>`;
+    return;
+  }
   if(!sel){
     el.innerHTML=`<h3>Visão geral</h3><p class="muted" style="margin-top:6px;font-size:15px">Selecione um lote no mapa.</p>
     <dl class="dl"><dt>Área total</dt><dd>${f(TOT,2)} ha</dd><dt>Área média por lote</dt><dd>${f(TOT/L.length,0)} ha</dd>
@@ -597,6 +616,7 @@ function siglar(){
 ["modo","chkPfi","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
 $("#modo").addEventListener("change",()=>{if($("#modo").value==="zona"){$("#chkZon").checked=true;$("#chkPfi").checked=false;drawMap()}});
 ["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
+document.querySelectorAll(".vtab").forEach(b=>b.addEventListener("click",()=>{vista=b.dataset.v;sel=null;document.querySelectorAll(".vtab").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});$("#modo").disabled=(vista==="total");drawMap();detalhe();tabela()}));
 pfiBars();drawMap();fsc();pend();sim();siglar();
 new MutationObserver(()=>{clearTimeout(window._sg);window._sg=setTimeout(siglar,50)}).observe(document.body,{childList:true,subtree:true});
 </script>

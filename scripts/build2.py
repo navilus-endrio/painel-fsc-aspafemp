@@ -9,6 +9,16 @@ pfi = sum(l['pfi_ha'] for l in L)
 app = sum(l['app_ha'] for l in L)
 br = lambda x, n=0: f"{x:,.{n}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 l03 = [l for l in L if l['lote'] == '03'][0]
+from shapely.geometry import Polygon
+from shapely.ops import unary_union, transform
+import pyproj
+_u = unary_union([Polygon(l['ring']).buffer(2e-6) for l in L]).buffer(-2e-6)
+_utm = pyproj.Transformer.from_crs(4674, 31981, always_xy=True).transform
+_polys = list(_u.geoms) if _u.geom_type == 'MultiPolygon' else [_u]
+d['uniao'] = {'polys': [[[ [round(x, 5), round(y, 5)] for x, y in [pl.exterior.coords][0] ]] + [[[round(x, 5), round(y, 5)] for x, y in h.coords] for h in pl.interiors] for pl in _polys],
+              'perim_km': round(transform(_utm, _u).length / 1000, 1), 'partes': len(_polys),
+              'furos': sum(len(pl.interiors) for pl in _polys), 'vertices': sum(len(pl.exterior.coords) - 1 for pl in _polys)}
+print('uniao', d['uniao']['perim_km'], d['uniao']['partes'], d['uniao']['furos'], d['uniao']['vertices'])
 t = r('template2.html')
 t = t.replace('/*CSS*/', r('ref/style.css')).replace('/*LOGO1*/', r('logo1.txt').strip()).replace('/*LOGO2*/', r('logo2.txt').strip())
 t = t.replace('/*DATA*/', json.dumps(d, ensure_ascii=False, separators=(',', ':')))
