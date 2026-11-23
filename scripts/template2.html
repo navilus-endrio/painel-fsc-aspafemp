@@ -22,6 +22,7 @@ svg#mapa{width:100%;height:auto;display:block;border-radius:12px;background:var(
 .lot:focus{outline:none;stroke:var(--accent);stroke-width:3px}
 .lot.sel{stroke:#d9480f;stroke-width:3px}
 .lotlbl{font:700 .0095px var(--font-body);fill:var(--ink);text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:var(--solid);stroke-width:.0022;stroke-linejoin:round}
+.mass{fill:#7fb5e6;fill-opacity:.85;stroke:#2b73b8;stroke-width:.8px;pointer-events:none}
 .hyd{fill:none;stroke:#2b73b8;stroke-width:1px;stroke-linecap:round}
 .mapwrap{position:relative}
 #tip2{position:absolute;pointer-events:none;background:var(--ink);color:var(--solid);font-size:12.5px;padding:5px 9px;border-radius:7px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:3}
@@ -139,6 +140,7 @@ details.pr.done{border-color:var(--accent)}
           <label><input type="checkbox" id="chkZon"> Zoneamento</label>
           <label><input type="checkbox" id="chkHid" checked> Hidrografia</label>
           <label><input type="checkbox" id="chkApp"> APPs</label>
+          <label><input type="checkbox" id="chkMas" checked> Massas d’água</label>
           <label><input type="checkbox" id="chkLbl" checked> Rótulos</label>
         </div>
         <div class="leg" id="legenda"></div>
@@ -428,6 +430,7 @@ function drawMap(){
   s+=L.map(l=>`<path class="lot${vista==="total"?" nolin":(sel===l.lote?" sel":"")}" data-l="${l.lote}" ${vista==="total"?"":`tabindex="0" role="button" `}aria-label="${l.nome}, ${f(l.area_ha,0)} hectares" d="${rp(l.ring)}" fill="${colorFor(l)}" fill-opacity=".62"/>`).join("");
   if(vista==="total") s+=`<path class="uni-out" d="${UD}"/>`;
   if(appOn) s+=`<path class="appz" fill-rule="evenodd" d="${DATA.app.map(p=>p.map(rp).join("")).join("")}"/>`;
+  if($("#chkMas").checked) s+=`<path class="mass" fill-rule="evenodd" d="${DATA.massas.map(p=>p.map(rp).join("")).join("")}"/>`;
   if($("#chkHid").checked) s+=DATA.hidro.map(h=>`<path class="hyd" d="${gp(h.geom)}"/>`).join("");
   if($("#chkLbl").checked&&vista!=="total") s+=L.map(l=>`<text class="lotlbl" x="${px(l.centroide[0])}" y="${py(l.centroide[1])+.003}">${l.lote}</text>`).join("");
   svg.innerHTML=s;
@@ -454,6 +457,7 @@ function legend(){
   if($("#chkPfi").checked) h+=`<span><i style="background:#0b5c73;opacity:.5"></i>PFI (IFL 2020)</span>`;
   if($("#chkZon").checked&&m!=="zona") h+=Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
   if(appOn) h+=`<span><i style="background:#e8590c;opacity:.7"></i>APP: shape APP’S_APAT_ASPAFEMP (${f(TOT_APP,0)} ha)</span>`;
+  if($("#chkMas").checked) h+=`<span><i style="background:#7fb5e6;border:1px solid #2b73b8"></i>Massa d’água (${f(DATA.massas_ha,1)} ha)</span>`;
   if($("#chkHid").checked) h+=`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`;
   $("#legenda").innerHTML=h;
 }
@@ -670,7 +674,7 @@ function siglar(){
     });
   });
 }
-["modo","chkPfi","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
+["modo","chkPfi","chkZon","chkHid","chkMas","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
 $("#modo").addEventListener("change",()=>{if($("#modo").value==="zona"){$("#chkZon").checked=true;$("#chkPfi").checked=false;drawMap()}});
 ["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
 $("#zmais").onclick=()=>zoomBy(1.6);$("#zmenos").onclick=()=>zoomBy(1/1.6);$("#ztudo").onclick=()=>setView(VB.slice());

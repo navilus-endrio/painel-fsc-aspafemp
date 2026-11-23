@@ -35,6 +35,11 @@ _app = _app.simplify(0.00001)
 _pa = list(_app.geoms) if _app.geom_type == 'MultiPolygon' else [_app]
 d['app'] = [[[[round(x, 5), round(y, 5)] for x, y in pl.exterior.coords]] + [[[round(x, 5), round(y, 5)] for x, y in h.coords] for h in pl.interiors] for pl in _pa if pl.geom_type == 'Polygon']
 print('app ha (shape oficial, recortada)', round(app, 1), [l['app_ha'] for l in L])
+_sm = shapefile.Reader(r"C:\Users\endrio\OneDrive\Documentos\1 Brandão Engenharia e Projetos\ASPAFEMP\SHAPES\HIDROGRAFIAS E APPS\MASSAS_D'AGUA_APAT_ASPAFEMP.shp")
+_mas = transform(_to4674, unary_union([_shape(s.__geo_interface__) for s in _sm.shapes()]).buffer(0)).intersection(_u).simplify(0.00001)
+d['massas'] = [[[[round(x, 5), round(y, 5)] for x, y in pl.exterior.coords]] + [[[round(x, 5), round(y, 5)] for x, y in h.coords] for h in pl.interiors] for pl in (list(_mas.geoms) if _mas.geom_type == 'MultiPolygon' else [_mas]) if pl.geom_type == 'Polygon']
+d['massas_ha'] = round(transform(_a5880, _mas).area / 1e4, 1)
+print('massas ha', d['massas_ha'], len(d['massas']))
 t = r('template2.html')
 t = t.replace('/*CSS*/', r('ref/style.css')).replace('/*LOGO1*/', r('logo1.txt').strip()).replace('/*LOGO2*/', r('logo2.txt').strip())
 t = t.replace('/*DATA*/', json.dumps(d, ensure_ascii=False, separators=(',', ':')))
