@@ -13,7 +13,7 @@
 svg#mapa{width:100%;height:auto;display:block;border-radius:12px;background:var(--sunk)}
 .lot{stroke:var(--ink);stroke-width:1px;stroke-opacity:.75;cursor:pointer;transition:opacity .12s;vector-effect:non-scaling-stroke}
 #mapa path{vector-effect:non-scaling-stroke}
-#mapa{cursor:grab;touch-action:pan-y}
+#mapa{cursor:grab;touch-action:none}
 #mapa.arrastando{cursor:grabbing}
 .zbtns{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:4}
 .zbtns button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--glass-strong);color:var(--ink);font:700 18px/1 var(--font-body);cursor:pointer}
@@ -124,7 +124,7 @@ details.pr.done{border-color:var(--accent)}
       <div class="panel">
         <div class="tabs" role="tablist" aria-label="Vista do mapa"><button type="button" role="tab" class="vtab on" data-v="lotes" aria-selected="true">Lotes</button><button type="button" role="tab" class="vtab" data-v="total" aria-selected="false">Área total (lotes mesclados)</button></div>
         <div class="mapwrap"><svg id="mapa" role="img" aria-label="Mapa dos lotes da ASPAFEMP"></svg><div class="zbtns"><button type="button" id="zmais" aria-label="Aproximar" title="Aproximar">+</button><button type="button" id="zmenos" aria-label="Afastar" title="Afastar">−</button><button type="button" id="ztudo" aria-label="Ver a área toda" title="Ver a área toda">⤢</button></div><div id="tip2"></div></div>
-        <p class="src" style="margin-top:8px">Aproxime com os botões ou com Ctrl + roda do mouse, arraste para mover e clique num lote para aproximar nele.</p>
+        <p class="src" style="margin-top:8px">Aproxime com a roda do mouse, com o gesto de pinça no touchpad ou na tela de toque, ou com os botões +/−. Arraste para mover e clique ou toque num lote para aproximar nele. Para rolar a página, use a barra lateral ou passe o ponteiro fora do mapa.</p>
         <div class="ctl">
           <label>Colorir por
             <select id="modo">
@@ -674,11 +674,44 @@ function siglar(){
 $("#modo").addEventListener("change",()=>{if($("#modo").value==="zona"){$("#chkZon").checked=true;$("#chkPfi").checked=false;drawMap()}});
 ["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
 $("#zmais").onclick=()=>zoomBy(1.6);$("#zmenos").onclick=()=>zoomBy(1/1.6);$("#ztudo").onclick=()=>setView(VB.slice());
-(function(){const svg=$("#mapa");let drag=null,moved=false;
-  svg.addEventListener("wheel",e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();const r=svg.getBoundingClientRect();zoomBy(e.deltaY<0?1.25:1/1.25,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height)},{passive:false});
-  svg.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"||e.button!==0)return;drag={x:e.clientX,y:e.clientY,v:cur.slice()};moved=false});
-  window.addEventListener("pointermove",e=>{if(!drag)return;const r=svg.getBoundingClientRect(),dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4){moved=true;svg.classList.add("arrastando")}if(!moved)return;const [x,y,w,h]=drag.v;setView(fitVB(x-dx/r.width*w,y-dy/r.height*h,w,h))});
-  window.addEventListener("pointerup",()=>{drag=null;svg.classList.remove("arrastando")});
+(function(){
+  const svg=$("#mapa"), ptr=new Map();
+  let moved=false, start=null; // start: gesture snapshot
+  const rect=()=>svg.getBoundingClientRect();
+  const snap=()=>{const r=rect(),ps=[...ptr.values()];
+    const cx=ps.reduce((s,q)=>s+q.x,0)/ps.length, cy=ps.reduce((s,q)=>s+q.y,0)/ps.length;
+    const d=ps.length>1?Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y):0;
+    start={v:cur.slice(),cx,cy,d,r};};
+  // wheel (mouse) and pinch/scroll on a trackpad (pinch arrives as ctrl+wheel)
+  svg.addEventListener("wheel",e=>{
+    e.preventDefault();
+    let dy=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?400:1);
+    const k=Math.exp(-dy*(e.ctrlKey?0.012:0.0016));
+    const r=rect();
+    zoomBy(Math.max(.5,Math.min(2,k)),(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height);
+  },{passive:false});
+  svg.addEventListener("pointerdown",e=>{
+    if(e.pointerType==="mouse"&&e.button!==0)return;
+    ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=false;snap();
+  });
+  window.addEventListener("pointermove",e=>{
+    if(!ptr.has(e.pointerId)||!start)return;
+    ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const ps=[...ptr.values()],r=start.r,[x,y,w,h]=start.v;
+    const cx=ps.reduce((s,q)=>s+q.x,0)/ps.length, cy=ps.reduce((s,q)=>s+q.y,0)/ps.length;
+    const dx=cx-start.cx, dy=cy-start.cy;
+    if(!moved&&Math.abs(dx)+Math.abs(dy)<6&&ps.length<2)return;
+    moved=true;svg.classList.add("arrastando");
+    let k=1;
+    if(ps.length>1&&start.d>0)k=Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y)/start.d;
+    const nw=w/k,nh=h/k;
+    // keep the map point under the gesture centre fixed
+    const fx=(start.cx-r.left)/r.width, fy=(start.cy-r.top)/r.height;
+    const ox=x+w*fx-nw*fx, oy=y+h*fy-nh*fy;
+    setView(fitVB(ox-dx/r.width*nw,oy-dy/r.height*nh,nw,nh));
+  });
+  const end=e=>{ptr.delete(e.pointerId);if(ptr.size)snap();else{start=null;svg.classList.remove("arrastando")}};
+  window.addEventListener("pointerup",end);window.addEventListener("pointercancel",end);
   svg.addEventListener("click",e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
 })();
 $("#btnApp").addEventListener("click",()=>{appOn=!appOn;const b=$("#btnApp");b.classList.toggle("on",appOn);b.setAttribute("aria-pressed",appOn);b.textContent=appOn?"Ocultar APPs":"Mostrar APPs (faixa de 30 m)";drawMap()});
