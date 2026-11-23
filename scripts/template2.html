@@ -51,6 +51,7 @@ details.pr.done{border-color:var(--accent)}
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .vtab{font:600 14px var(--font-body);padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--glass-strong);color:var(--muted);cursor:pointer}
 .vtab.on{background:var(--accent);color:var(--solid);border-color:var(--accent)}
+.appz{fill:#e8590c;fill-opacity:.55;stroke:#c2410c;stroke-width:.0004;pointer-events:none}
 .uni{fill:#cfe3d6;fill-opacity:.6;stroke:none}
 .uni-out{fill:none;stroke:var(--ink);stroke-width:.0022;stroke-linejoin:round;pointer-events:none}
 .lot.nolin{stroke:none;cursor:default;pointer-events:none}
@@ -130,6 +131,7 @@ details.pr.done{border-color:var(--accent)}
           <label><input type="checkbox" id="chkPfi" checked> PFI (IFL 2020)</label>
           <label><input type="checkbox" id="chkZon"> Zoneamento</label>
           <label><input type="checkbox" id="chkHid" checked> Hidrografia</label>
+          <button type="button" class="vtab" id="btnApp" aria-pressed="false">Mostrar APPs (faixa de 30 m)</button>
           <label><input type="checkbox" id="chkLbl" checked> Rótulos</label>
         </div>
         <div class="leg" id="legenda"></div>
@@ -197,24 +199,45 @@ details.pr.done{border-color:var(--accent)}
     <header>
       <div class="eyebrow">Cenário de planejamento</div>
       <h2>Simulador de manejo</h2>
-      <p class="lede">Do total da área, tira-se a área central de PFI, a APP, a infraestrutura e uma reserva extra. O que sobra, dividido pelo ciclo, dá a área de colheita anual (UPA). Troque pelos números do PMFS quando existirem.</p>
+      <p class="lede">Do total da área, tira-se a área central de PFI, a APP, a infraestrutura e uma reserva extra. O que sobra, dividido pelo ciclo, dá a área de colheita anual (UPF). Os limites seguem as resoluções do CEMAAM para o Amazonas. Troque pelos números do PMFS quando existirem.</p>
     </header>
     <div class="panel">
       <div class="two">
         <div>
-          <div class="fld"><label>Ciclo de corte <b id="vCiclo"></b></label><input type="range" id="ciclo" min="25" max="35" step="1" value="30"></div>
-          <div class="fld"><label>Intensidade de corte <b id="vInt"></b></label><input type="range" id="intens" min="10" max="30" step="1" value="20"></div>
-          <div class="fld"><label>Infraestrutura (estradas, pátios, trilhas) <b id="vInfra"></b></label><input type="range" id="infra" min="0" max="10" step="0.5" value="4"></div>
+          <div class="fld"><label>Ciclo de corte (mínimo legal: 25 anos) <b id="vCiclo"></b></label><input type="range" id="ciclo" min="25" max="40" step="1" value="30"></div>
+          <div class="fld"><label>Intensidade de corte (máximo legal: 25 m³/ha por UPF) <b id="vInt"></b></label><input type="range" id="intens" min="10" max="25" step="1" value="20"></div>
+          <div class="fld"><label>Infraestrutura (estradas e pátios; máximo legal: 2,5% da UT) <b id="vInfra"></b></label><input type="range" id="infra" min="0" max="2.75" step="0.25" value="2.5"></div>
           <div class="fld"><label>Reserva extra (rede de conservação, AVC) <b id="vCons"></b></label><input type="range" id="cons" min="0" max="15" step="1" value="0"></div>
           <label class="chk"><input type="checkbox" id="ovl"> Posicionar a área central sobre as APPs (sobreposição)</label>
-          <p class="src" style="margin-top:10px">Faixas: ciclo de 25 a 35 anos e até 30 m³/ha (IN MMA 5/2006, PMFS de grande porte). Confira a norma vigente e a do órgão licenciador. O padrão FSC não fixa esses números.</p>
+          <p class="src" style="margin-top:10px">Limites da Resolução CEMAAM 30/2018, alterada pela Resolução CEMAAM 35/2022, para PMFS de Maior Impacto de Exploração: ciclo mínimo de 25 anos (art. 5º, I), intensidade máxima de 25 m³/ha por UPF (art. 5º, III) e infraestrutura de até 2,5% da UT, mais 0,25% de caixa de empréstimo (art. 13). Valores diferentes exigem estudo técnico com ART, analisado pelo IPAAM (art. 7º). O padrão FSC não fixa esses números.</p>
         </div>
         <div>
           <div class="outg" id="saida"></div>
           <div class="stack" id="alertaSim"></div>
         </div>
       </div>
-      <p class="src siglas-note"><b>Siglas:</b> UPA = Unidade de Produção Anual; APP = Área de Preservação Permanente; AVC = Atributo de Alto Valor de Conservação; PMFS = Plano de Manejo Florestal Sustentável; IN MMA = Instrução Normativa do Ministério do Meio Ambiente.</p>
+      <p class="src siglas-note"><b>Siglas:</b> UPF = Unidade de Produção Florestal; APP = Área de Preservação Permanente; AVC = Atributo de Alto Valor de Conservação; PMFS = Plano de Manejo Florestal Sustentável; CEMAAM = Conselho Estadual de Meio Ambiente do Amazonas; IPAAM = Instituto de Proteção Ambiental do Amazonas; UT = Unidade de Trabalho; CDRU = Concessão de Direito Real de Uso; APAT = Autorização Prévia à Análise Técnica.</p>
+    </div>
+    <div class="panel" style="margin-top:18px">
+      <h3>Marco legal do manejo no Amazonas</h3>
+      <p class="muted" style="margin-top:6px;font-size:15px">Parâmetros que o simulador aplica e exigências que o PMFS desta área precisa cumprir. Fonte: Resolução CEMAAM 30/2018, alterada pela 35/2022, salvo indicação.</p>
+      <div class="tbl-wrap" style="margin-top:12px"><table>
+        <thead><tr><th>Parâmetro</th><th>Regra</th><th>Artigo</th></tr></thead>
+        <tbody>
+          <tr><td>Ciclo de corte</td><td>No mínimo 25 anos (Maior Impacto) e 12 anos (Menor Impacto)</td><td>5º, I</td></tr>
+          <tr><td>Produtividade presumida</td><td>0,86 m³/ha/ano, quando não há estudo da área</td><td>5º, II</td></tr>
+          <tr><td>Intensidade máxima</td><td>25 m³/ha por UPF (Maior Impacto) e 10 m³/ha (Menor Impacto)</td><td>5º, III</td></tr>
+          <tr><td>Diâmetro mínimo de corte</td><td>50 cm, salvo estudo para valor menor</td><td>6º</td></tr>
+          <tr><td>Inventário</td><td>Censitário, DAP mínimo de 40 cm, incluindo árvores em APP e espécies protegidas; plaqueta durável por 3 anos</td><td>8º</td></tr>
+          <tr><td>Árvores mantidas</td><td>Ao menos 10% por espécie (15% nas espécies CITES), no mínimo 3 árvores por 100 ha de UT (4 nas CITES)</td><td>12</td></tr>
+          <tr><td>Infraestrutura</td><td>Estradas até 1,75% e pátios até 0,75% da UT; total de 2,5%, mais 0,25% de caixa de empréstimo</td><td>13</td></tr>
+          <tr><td>Área acima de 2.500 ha</td><td>Inventário florestal contínuo, lançado no Sinaflor a cada 5 anos</td><td>57</td></tr>
+          <tr><td>Documento fundiário (APAT)</td><td>A CDRU só subsidia manejo de pequena escala e agricultura familiar, por comunidade; exige anuência do órgão gestor da UC e CAR aprovado</td><td>Res. 36/2022, arts. 2º e 3º</td></tr>
+          <tr><td>PMFS em UC de Uso Sustentável</td><td>Pessoa jurídica: associação de moradores da UC; ata de anuência do Conselho Deliberativo; anuência do órgão gestor; após o plano de gestão, só se a atividade estiver nele</td><td>IN SDS 001/2009, arts. 1º e 4º</td></tr>
+          <tr><td>Consulta pública</td><td>Obrigatória acima de 50.000 ha; não se aplica a esta área</td><td>Lei 2.416/1996, art. 7º (Lei 3.499/2010)</td></tr>
+        </tbody>
+      </table></div>
+      <p class="src">Resoluções do CEMAAM publicadas no Diário Oficial do Estado de 19/01/2022. Os parâmetros do art. 5º podem ser alterados com estudo técnico e ART (art. 7º). Texto conferido nas cópias da pasta da Brandão; não conferi se houve alteração posterior a essa data.</p>
     </div>
   </div>
 </section>
@@ -229,7 +252,7 @@ details.pr.done{border-color:var(--accent)}
     <div class="panel" style="margin-bottom:14px">
       <div class="two">
         <div class="fld" style="margin:0"><label>Árvores a inventariar por hectare (hipótese) <b id="vDens"></b></label><input type="range" id="dens" min="2" max="25" step="1" value="8">
-          <p class="src" style="margin-top:8px">Use o valor do inventário amostral ou de um PMFS vizinho. A UPA anual vem do simulador.</p></div>
+          <p class="src" style="margin-top:8px">Use o valor do inventário amostral ou de um PMFS vizinho. A UPF anual vem do simulador.</p></div>
         <div class="outg" id="saidaInv"></div>
       </div>
     </div>
@@ -239,7 +262,7 @@ details.pr.done{border-color:var(--accent)}
       <button type="button" class="seg" id="jprev" style="padding:8px 12px;font:600 14px var(--font-body);cursor:pointer;color:var(--muted)">← Etapa anterior</button>
       <button type="button" class="seg" id="jnext" style="padding:8px 12px;font:600 14px var(--font-body);cursor:pointer;color:var(--muted)">Próxima etapa →</button>
     </div>
-    <p class="src siglas-note"><b>Siglas:</b> UPA = Unidade de Produção Anual; UT = Unidade de Trabalho; DAP = diâmetro à altura do peito; CAP = Corte Anual Permitido; EIR = Exploração de Impacto Reduzido; POA = Plano Operacional Anual; PFI = Paisagem Florestal Intacta.</p>
+    <p class="src siglas-note"><b>Siglas:</b> UPF = Unidade de Produção Florestal; UT = Unidade de Trabalho; DAP = diâmetro à altura do peito; CAP = Corte Anual Permitido; EIR = Exploração de Impacto Reduzido; POA = Plano Operacional Anual; PFI = Paisagem Florestal Intacta.</p>
   </div>
 </section>
 
@@ -294,13 +317,17 @@ details.pr.done{border-color:var(--accent)}
           <tr><td><b>CAP</b></td><td>Corte Anual Permitido</td><td>Volume comercial anual aprovado, calculado por unidade de trabalho com base em inventário a 100%.</td></tr>
           <tr><td><b>SLIMF</b></td><td><i>Small and Low Intensity Managed Forests</i></td><td>Até 1.000 ha, ou colheita abaixo de 20% do IMA e de 5.000 m³/ano, ou só PFNM, ecoturismo e serviços ambientais (Tabela 1, p. 12).</td></tr>
           <tr><td><b>IMA</b></td><td>Incremento Médio Anual</td><td>Crescimento médio da floresta por ano.</td></tr>
-          <tr><td><b>UPA</b></td><td>Unidade de Produção Anual</td><td>Parte da área produtiva colhida a cada ano do ciclo.</td></tr>
-          <tr><td><b>UT</b></td><td>Unidade de Trabalho</td><td>Subdivisão operacional da UPA.</td></tr>
-          <tr><td><b>POA</b></td><td>Plano Operacional Anual</td><td>Plano da colheita de cada UPA, submetido ao órgão licenciador.</td></tr>
+          <tr><td><b>UPF</b></td><td>Unidade de Produção Florestal</td><td>Parte da área produtiva colhida a cada ano do ciclo.</td></tr>
+          <tr><td><b>UT</b></td><td>Unidade de Trabalho</td><td>Subdivisão operacional da UPF.</td></tr>
+          <tr><td><b>POA</b></td><td>Plano Operacional Anual</td><td>Plano da colheita de cada UPF, submetido ao órgão licenciador.</td></tr>
           <tr><td><b>PMFS</b></td><td>Plano de Manejo Florestal Sustentável</td><td>Instrumento legal e técnico que orienta o manejo.</td></tr>
           <tr><td><b>DAP</b></td><td>Diâmetro à altura do peito</td><td>Medida padrão de diâmetro da árvore, a 1,30 m do solo.</td></tr>
           <tr><td><b>CONAMA</b></td><td>Conselho Nacional do Meio Ambiente</td><td>Resolução 406/2009: parâmetros técnicos de PMFS na Amazônia.</td></tr>
-          <tr><td><b>IN MMA</b></td><td>Instrução Normativa do Ministério do Meio Ambiente</td><td>IN 5/2006: ciclo, intensidade e procedimentos de PMFS.</td></tr>
+          <tr><td><b>CEMAAM</b></td><td>Conselho Estadual de Meio Ambiente do Amazonas</td><td>Resoluções 30/2018 e 35/2022 (PMFS) e 36/2022 (APAT).</td></tr>
+          <tr><td><b>IPAAM</b></td><td>Instituto de Proteção Ambiental do Amazonas</td><td>Órgão que licencia o PMFS no estado.</td></tr>
+          <tr><td><b>APAT</b></td><td>Autorização Prévia à Análise Técnica de PMFS</td><td>Habilita a análise técnica do PMFS; não autoriza explorar (Res. CEMAAM 36/2022, art. 1º).</td></tr>
+          <tr><td><b>AMF</b></td><td>Área de Manejo Florestal</td><td>Área sob o PMFS, dividida em UPFs.</td></tr>
+          <tr><td><b>DMC</b></td><td>Diâmetro Mínimo de Corte</td><td>50 cm para espécies sem DMC específico (art. 6º).</td></tr>
           <tr><td><b>CAR</b></td><td>Cadastro Ambiental Rural</td><td>Registro autodeclaratório do imóvel.</td></tr>
           <tr><td><b>CLPI</b></td><td>Consentimento livre, prévio e informado</td><td>Base dos Princípios 3 e 4 quando há direitos de povos e comunidades.</td></tr>
           <tr><td><b>CREA</b></td><td>Conselho Regional de Engenharia e Agronomia</td><td>Registro profissional do responsável técnico.</td></tr>
@@ -318,7 +345,8 @@ details.pr.done{border-color:var(--accent)}
         <li>Camadas de PFI (IFL 2020) e de aptidão das paisagens (vetorização do Anexo H) tiradas desse mesmo painel. O shapefile oficial do Anexo H pode ser pedido a <a href="mailto:info@fsc.org.br">info@fsc.org.br</a>; <b>não foi solicitado</b>.</li>
         <li>Intact Forest Landscapes 2020: Potapov, P. et al., 2017. The last frontiers of wilderness. <i>Science Advances</i> 3, e1600821. Dados em <a href="https://intactforests.org/data.ifl.html" rel="noopener">intactforests.org</a>, licença <b>CC BY 4.0</b>. Alterações: recortado, unido e simplificado (cerca de 1 km).</li>
         <li>Contorno dos lotes (AREA_CONTORNO_LOTES), zoneamento, hidrografia, comunidades e CDRU 012/2022 SECT da Floresta Estadual de Maués, da pasta do cliente ASPAFEMP. Hidrografia de base IBGE.</li>
-        <li>IN MMA 5/2006 e Resolução CONAMA 406/2009, para ciclo, intensidade e EIR.</li>
+        <li>Resolução CEMAAM 30/2018, alterada pela Resolução CEMAAM 35/2022 (DOE de 19/01/2022), para ciclo, intensidade, infraestrutura, retenção de árvores e inventário; Resolução CEMAAM 36/2022, sobre a APAT e os documentos fundiários; Instrução Normativa SDS 001/2009, sobre PMFS em Unidades de Conservação de Uso Sustentável; Lei Estadual 2.416/1996, alterada pela Lei 3.499/2010. Texto conforme as cópias da pasta Legislação Ambiental – Amazonas.</li>
+        <li>Resolução CONAMA 406/2009, base citada para a EIR.</li>
       </ul>
       <p class="aviso" style="margin-top:10px"><b>Direitos e uso.</b> Este painel é um <b>resumo não oficial</b>, elaborado pela Brandão Engenharia e Projetos, sem vínculo com o FSC, e não substitui o documento oficial. O padrão é © 2026 Forest Stewardship Council, A.C., todos os direitos reservados (FSC® F000100); aqui o conteúdo é resumido, com indicação das páginas. Texto oficial e versão em inglês, que prevalece, em <a href="https://br.fsc.org" rel="noopener">br.fsc.org</a>.</p>
       <p class="aviso" style="margin-top:10px"><b>Dados do cliente.</b> Este arquivo contém o contorno dos lotes da ASPAFEMP. Não publicar em endereço aberto sem aprovação. Tudo é processado no navegador; nada é enviado a servidor.</p></div>
@@ -350,7 +378,7 @@ L.forEach(l=>{
 });
 const TOT=L.reduce((s,l)=>s+l.area_ha,0), TOT_APP=L.reduce((s,l)=>s+l.app_ha,0), TOT_HID=L.reduce((s,l)=>s+l.hidro_km,0);
 const TOT_PFI=L.reduce((s,l)=>s+l.pfi_ha,0), CORE=TOT_PFI*PCT/100;
-let sel=null, sortKey="lote", sortDir=1, vista="lotes";
+let sel=null, sortKey="lote", sortDir=1, vista="lotes", appOn=false;
 
 /* mapa */
 const lat0=-3.9, kx=Math.cos(lat0*Math.PI/180), px=x=>x*kx, py=y=>-y, bb=DATA.bbox, mg=.045;
@@ -379,6 +407,7 @@ function drawMap(){
   if(vista==="total") s+=`<path class="uni" d="${UD}"/>`;
   s+=L.map(l=>`<path class="lot${vista==="total"?" nolin":(sel===l.lote?" sel":"")}" data-l="${l.lote}" ${vista==="total"?"":`tabindex="0" role="button" `}aria-label="${l.nome}, ${f(l.area_ha,0)} hectares" d="${rp(l.ring)}" fill="${colorFor(l)}" fill-opacity=".62"/>`).join("");
   if(vista==="total") s+=`<path class="uni-out" d="${UD}"/>`;
+  if(appOn) s+=`<path class="appz" fill-rule="evenodd" d="${DATA.app.map(p=>p.map(rp).join("")).join("")}"/>`;
   if($("#chkHid").checked) s+=DATA.hidro.map(h=>`<path class="hyd" d="${gp(h.geom)}"/>`).join("");
   if($("#chkLbl").checked&&vista!=="total") s+=L.map(l=>`<text class="lotlbl" x="${px(l.centroide[0])}" y="${py(l.centroide[1])+.003}">${l.lote}</text>`).join("");
   svg.innerHTML=s;
@@ -404,6 +433,7 @@ function legend(){
   if(vista==="total") h+=`<span><i style="background:none;border:2px solid var(--ink)"></i>Contorno da área total (${f(TOT,0)} ha)</span>`;
   if($("#chkPfi").checked) h+=`<span><i style="background:#0b5c73;opacity:.5"></i>PFI (IFL 2020)</span>`;
   if($("#chkZon").checked&&m!=="zona") h+=Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
+  if(appOn) h+=`<span><i style="background:#e8590c;opacity:.7"></i>APP: faixa de 30 m de cada lado (${f(TOT_APP,0)} ha, estimativa)</span>`;
   if($("#chkHid").checked) h+=`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`;
   $("#legenda").innerHTML=h;
 }
@@ -484,7 +514,7 @@ function sim(){
   $("#saida").innerHTML=[
    [f(prod,0)+" ha","Área produtiva líquida ("+f(prod/TOT*100,1)+"% do total)"],
    [f(CORE,0)+" ha","Área central de PFI (sem exploração)"],
-   [f(upa,0)+" ha/ano","Área de colheita anual (UPA)"],
+   [f(upa,0)+" ha/ano","Área de colheita anual (UPF)"],
    [f(va,0)+" m³/ano","Volume anual no cenário"],
    [f(va*ciclo,0)+" m³","Volume em um ciclo de "+ciclo+" anos"],
    [f(it/ciclo,2)+" m³/ha/ano","Taxa média de colheita"]
@@ -492,7 +522,9 @@ function sim(){
   const a=[];
   a.push(["A taxa de colheita ("+f(it/ciclo,2)+" m³/ha/ano) precisa ficar abaixo da capacidade de reposição da floresta (5.2.1 e 5.2.2, p. 39). Sem o incremento medido nas parcelas permanentes, o cenário é só aritmética.",0]);
   if(va>5000) a.push(["Volume anual acima de 5.000 m³: fora do teto de baixa intensidade do SLIMF (Tabela 1, p. 12). Vale o regime de grande escala, com o 9.2.8.",1]);
-  if(it>=28) a.push(["Intensidade perto do teto de 30 m³/ha da IN MMA 5/2006. Em auditoria, intensidade alta pede justificativa e monitoramento forte.",1]);
+  if(it/ciclo>0.86) a.push(["A taxa de "+f(it/ciclo,2)+" m³/ha/ano passa da produtividade de 0,86 m³/ha/ano que a Resolução CEMAAM 30/2018 (art. 5º, II) presume quando não há estudo da área. Para manter o cenário, é preciso estudo de incremento (art. 7º), ou reduzir a intensidade, ou alongar o ciclo.",1]);
+  if(it>=24) a.push(["Intensidade junto do teto de 25 m³/ha por UPF (art. 5º, III). Em auditoria FSC, intensidade alta pede justificativa e monitoramento forte.",1]);
+  if(TOT>2500) a.push(["Área de manejo acima de 2.500 ha: a resolução exige sistema de inventário florestal contínuo, com os dados lançados no Sinaflor a cada 5 anos (art. 57).",0]);
   if(ovl) a.push(["Com a área central sobre as APPs, a área protegida total cai de "+f(CORE+TOT_APP,0)+" para "+f(prot,0)+" ha. A norma só deixa de contar APP fora da área central, então a sobreposição depende de onde a área central for desenhada.",0]);
   $("#alertaSim").innerHTML=a.map(x=>`<div class="callout" style="margin:0;${x[1]?"border-color:var(--no)":""}">${x[0]}</div>`).join("");
   inv(); detalhe(); tabela();
@@ -500,10 +532,10 @@ function sim(){
 
 /* inventário (jornada) */
 const INV=[
- {t:"Planejamento e divisão em UPA e UT",s:"A ordem do ciclo",
-  goal:"Dividir a área produtiva em Unidades de Produção Anual, uma por ano do ciclo, e subdividir cada UPA em Unidades de Trabalho de tamanho operacional.",
+ {t:"Planejamento e divisão em UPF e UT",s:"A ordem do ciclo",
+  goal:"Dividir a área produtiva em Unidades de Produção Anual, uma por ano do ciclo, e subdividir cada UPF em Unidades de Trabalho de tamanho operacional.",
   fsc:["7.2.1 — plano de manejo com ações e procedimentos consistentes (p. 47)","5.2.1 — nível de colheita baseado nas melhores informações disponíveis (p. 39)","O CAP é calculado por unidade de trabalho, com base no inventário a 100% (glossário, p. 115)"],
-  area:["Os lotes de ~2.000 ha não são UPAs: com ciclo de 30 anos, a UPA fica na casa de 600 ha.","A área central de PFI sai antes da divisão: nenhuma UPA pode cair sobre ela.","O Lote 13, alongado, precisa de desenho próprio das UT."]},
+  area:["Os lotes de ~2.000 ha não são UPFs: com ciclo de 30 anos, a UPF fica na casa de 600 ha.","A área central de PFI sai antes da divisão: nenhuma UPF pode cair sobre ela.","O Lote 13, alongado, precisa de desenho próprio das UT."]},
  {t:"Delimitação e picadas",s:"Limites em campo",
   goal:"Abrir linhas de orientação e marcar em campo os limites de cada UT, georreferenciando os vértices e as APPs encontradas.",
   fsc:["1.2.3 — limites da UMF disponíveis em mapas ou croquis (p. 21)","6.1.1 — valores ambientais identificados dentro e fora da UMF (p. 41)"],
@@ -519,7 +551,7 @@ const INV=[
  {t:"Cálculo de volume e estatística",s:"Do inventário ao CAP",
   goal:"Calcular volume por árvore e por espécie, fitossociologia e erro de amostragem quando houver amostragem.",
   fsc:["5.2.1 e 5.2.2 — colheita não excede a capacidade de reposição da floresta (p. 39)","Anexo F — requisitos de monitoramento: regeneração, solo, água, PFI (p. 88)"],
-  area:["Substitui a intensidade hipotética do simulador por número medido.","Se o volume por hectare passar de 30 m³, o plano reduz a intensidade para ficar na IN MMA 5/2006."]},
+  area:["Substitui a intensidade hipotética do simulador por número medido.","Se o volume por hectare passar de 25 m³, o plano reduz a intensidade para ficar no limite da Resolução CEMAAM 30/2018 (art. 5º, III)."]},
  {t:"Seleção de árvores de corte e retenção",s:"O que fica em pé",
   goal:"Escolher as árvores de corte pelo diâmetro mínimo de corte e deixar porta-sementes e remanescentes por espécie.",
   fsc:["10.1.1 — áreas colhidas protegidas para promover regeneração (p. 61)","P6 — valores e impactos ambientais (p. 41–46)"],
@@ -529,7 +561,7 @@ const INV=[
   fsc:["9.2.5 — exploração e estradas só em áreas não-centrais, com EIR conforme CONAMA 406/2009 (p. 57–58)","Nenhuma PFI reduzida abaixo de 50.000 ha na paisagem (9.2.5)"],
   area:["Aqui se confirma a infraestrutura de "+f(infraPct(),1)+"% do simulador.","Estrada nova em PFI é o ponto que mais pesa na auditoria do 9.2.5. Em acesso fluvial, o porto e o transporte pelo rio entram no mapa."]},
  {t:"Submissão e autorização",s:"Sem licença, sem colheita",
-  goal:"Entregar o inventário e o Plano Operacional Anual ao órgão licenciador para liberação da UPA do ano.",
+  goal:"Entregar o inventário e o Plano Operacional Anual ao órgão licenciador para liberação da UPF do ano.",
   fsc:["P1 — cumprimento das leis; 1.1.1 registro legal documentado e incontestável (p. 21)","7.4.2 — planejamento revisado com resultados de auditorias (p. 49)"],
   area:["Em UC estadual, a análise passa pelo órgão gestor da unidade. Contar o prazo de análise antes da safra.","O volume liberado precisa bater com o inventariado e com o CAP."]},
  {t:"Colheita, monitoramento e pós-colheita",s:"Provar que funciona",
@@ -545,7 +577,7 @@ function jRender(i){
 }
 function inv(){
   const d=+$("#dens").value; $("#vDens").textContent=d+" árv./ha"; const n=SIM.upa*d;
-  $("#saidaInv").innerHTML=[[f(SIM.upa,0)+" ha","UPA anual a inventariar"],[f(n,0)+" árvores","Plaquetas e medições por UPA"],[f(n*SIM.ciclo,0)+" árvores","Inventário do ciclo inteiro"],[SIM.ciclo+" UPAs","Uma por ano do ciclo"]]
+  $("#saidaInv").innerHTML=[[f(SIM.upa,0)+" ha","UPF anual a inventariar"],[f(n,0)+" árvores","Plaquetas e medições por UPF"],[f(n*SIM.ciclo,0)+" árvores","Inventário do ciclo inteiro"],[SIM.ciclo+" UPFs","Uma por ano do ciclo"]]
    .map(o=>`<div><div class="v">${o[0]}</div><div class="l">${o[1]}</div></div>`).join("");
   jRender(jAt);
 }
@@ -562,7 +594,7 @@ const PR=[
  ["4","Relações com a comunidade","8 critérios · pág. 34","atenção",CTX.com20+" comunidades a até 20 km; a mais próxima a "+f(CTX.comProx,1)+" km.","Identificação de comunidades e povos tradicionais (4.1.1), mapeamento de usos (castanha, caça, pesca, roças), reuniões registradas, mecanismo de queixas, acordos."],
  ["5","Benefícios da floresta","5 critérios · pág. 39","em andamento","O simulador dá a ordem de grandeza da produção anual.","Inventário a 100%, CAP por unidade de trabalho, viabilidade econômica, colheita abaixo da reposição (5.2.1 e 5.2.2)."],
  ["6","Valores e impactos ambientais","10 critérios · pág. 41","atenção","APP estimada em "+f(TOT_APP,0)+" ha ("+f(TOT_APP/TOT*100,1)+"%) e "+f(TOT_HID,0)+" km de cursos d’água.","Valores ambientais dentro e fora da UMF (6.1.1), mapa de APP e nascentes de campo, rede de áreas de conservação, fauna ameaçada, plano de resíduos."],
- ["7","Planejamento do manejo","6 critérios · pág. 47","em andamento","UPAs de cerca de 600 ha no cenário padrão.","Plano com ações e procedimentos (7.2.1), metas verificáveis (7.3.1), resumo público do plano (7.5.1), cronograma do ciclo."],
+ ["7","Planejamento do manejo","6 critérios · pág. 47","em andamento","UPFs de cerca de 600 ha no cenário padrão.","Plano com ações e procedimentos (7.2.1), metas verificáveis (7.3.1), resumo público do plano (7.5.1), cronograma do ciclo."],
  ["8","Monitoramento e avaliação","5 critérios · pág. 51","sem dado","Sem dado.","Procedimentos documentados (8.1.1), parcelas permanentes, análise de resultados (8.3.1), rastreamento do produto (8.5.1)."],
  ["9","Atributos de Alto Valor de Conservação 2.1","4 critérios · pág. 55","atenção",
   "PFI em "+f(TOT_PFI/TOT*100,0)+"% da área; classe Apta, 20%: área central mínima de "+f(CORE,0)+" ha. FLONA do Pau-Rosa a "+f(CTX.flona,1)+" km e Parque Nacional da Amazônia a "+CTX.parna+" km.",
@@ -589,7 +621,7 @@ function pend(){
   const nums=L.map(l=>+l.lote),miss=[];for(let i=Math.min(...nums);i<=Math.max(...nums);i++)if(!nums.includes(i))miss.push(String(i).padStart(2,"0"));
   const long=L.filter(l=>l.comp<.3).map(l=>l.nome).join(", ");
   const it=[
-   `<b>Enquadramento na UC:</b> confirmar no plano de gestão da ${CTX.uc} se o manejo madeireiro empresarial cabe na zona de Uso Extensivo. A zona de Manejo Florestal do zoneamento não coincide com nenhum dos 10 lotes. Princípio 1.`,
+   `<b>Documento fundiário e UC:</b> a Resolução CEMAAM 36/2022 (art. 2º, §5º) diz que a CDRU só subsidia manejo de pequena escala, por comunidade, e a IN SDS 001/2009 pede associação de moradores, ata de anuência do Conselho Deliberativo e anuência do órgão gestor. Confirmar como a APAT de 20.000 ha se enquadra. <b>Enquadramento na UC:</b> confirmar no plano de gestão da ${CTX.uc} se o manejo madeireiro empresarial cabe na zona de Uso Extensivo. A zona de Manejo Florestal do zoneamento não coincide com nenhum dos 10 lotes. Princípio 1.`,
    `<b>Paisagem e PFI:</b> pedir o shapefile oficial do Anexo H ao FSC (info@fsc.org.br) para confirmar a classe Apta e trocar o IFL 2020 pelo mapa de PFI de 01/01/2017. Hoje a área central mínima de ${f(CORE,0)} ha é triagem.`,
    `<b>Posição da área central:</b> definir onde ficam os ${f(CORE,0)} ha, em bloco único se possível, ligados à rede de conservação (9.2.7). Os Lotes 06, 07 e 08 têm mais de 85% de PFI; o Lote 03 tem ${f(L.find(l=>l.lote==="03").pfiPct,0)}%.`,
    `<b>Lotes fora do recorte:</b> este recorte de 20.000 ha tem os lotes 03 a 09, 12, 13 e 15. Faltam ${miss.join(", ")} na faixa 03–15. O contorno original de 26.362 ha usava outra seleção (01–04 e 08–16), então a lista de lotes mudou entre as versões.`,
@@ -604,7 +636,7 @@ function pend(){
 
 
 /* notas de apoio: siglas com explicação ao passar o mouse, tocar ou focar */
-const SG={PFI:"Paisagem Florestal Intacta",IFL:"Intact Forest Landscapes (mapa de paisagens florestais intactas)",APP:"Área de Preservação Permanente",UPA:"Unidade de Produção Anual",UT:"Unidade de Trabalho",UMF:"Unidade de Manejo Florestal",UC:"Unidade de Conservação",CDRU:"Concessão de Direito Real de Uso",AVC:"Atributo de Alto Valor de Conservação",CAN:"Rede de Áreas de Conservação",EIR:"Exploração de Impacto Reduzido",CAP:"Corte Anual Permitido",SLIMF:"Small and Low Intensity Managed Forests (florestas pequenas ou de baixa intensidade)",IMA:"Incremento Médio Anual",POA:"Plano Operacional Anual",PMFS:"Plano de Manejo Florestal Sustentável",DAP:"Diâmetro à altura do peito (1,30 m)",CONAMA:"Conselho Nacional do Meio Ambiente",CAR:"Cadastro Ambiental Rural",CLPI:"Consentimento livre, prévio e informado",FSC:"Forest Stewardship Council",FUNAI:"Fundação Nacional dos Povos Indígenas",ICMBio:"Instituto Chico Mendes de Conservação da Biodiversidade",FLONA:"Floresta Nacional",NR:"Norma Regulamentadora",EPI:"Equipamento de Proteção Individual"};
+const SG={PFI:"Paisagem Florestal Intacta",IFL:"Intact Forest Landscapes (mapa de paisagens florestais intactas)",APP:"Área de Preservação Permanente",UPF:"Unidade de Produção Florestal",UT:"Unidade de Trabalho",UMF:"Unidade de Manejo Florestal",UC:"Unidade de Conservação",CDRU:"Concessão de Direito Real de Uso",AVC:"Atributo de Alto Valor de Conservação",CAN:"Rede de Áreas de Conservação",EIR:"Exploração de Impacto Reduzido",CAP:"Corte Anual Permitido",SLIMF:"Small and Low Intensity Managed Forests (florestas pequenas ou de baixa intensidade)",IMA:"Incremento Médio Anual",POA:"Plano Operacional Anual",PMFS:"Plano de Manejo Florestal Sustentável",DAP:"Diâmetro à altura do peito (1,30 m)",CONAMA:"Conselho Nacional do Meio Ambiente",CEMAAM:"Conselho Estadual de Meio Ambiente do Amazonas",IPAAM:"Instituto de Proteção Ambiental do Amazonas",APAT:"Autorização Prévia à Análise Técnica de PMFS",AMF:"Área de Manejo Florestal",DMC:"Diâmetro Mínimo de Corte",UPF:"Unidade de Produção Florestal",CAR:"Cadastro Ambiental Rural",CLPI:"Consentimento livre, prévio e informado",FSC:"Forest Stewardship Council",FUNAI:"Fundação Nacional dos Povos Indígenas",ICMBio:"Instituto Chico Mendes de Conservação da Biodiversidade",FLONA:"Floresta Nacional",NR:"Norma Regulamentadora",EPI:"Equipamento de Proteção Individual"};
 function siglar(){
   const re=new RegExp("(?<![\wÀ-ú-])("+Object.keys(SG).join("|")+")(?![\wÀ-ú])","g");
   document.querySelectorAll("section p,section li,section h3,section .lede,section label,section .l,section .callout,section small,section dd,section summary,section .quote").forEach(el=>{
@@ -621,7 +653,8 @@ function siglar(){
 ["modo","chkPfi","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
 $("#modo").addEventListener("change",()=>{if($("#modo").value==="zona"){$("#chkZon").checked=true;$("#chkPfi").checked=false;drawMap()}});
 ["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
-document.querySelectorAll(".vtab").forEach(b=>b.addEventListener("click",()=>{vista=b.dataset.v;sel=null;document.querySelectorAll(".vtab").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});drawMap();detalhe();tabela()}));
+$("#btnApp").addEventListener("click",()=>{appOn=!appOn;const b=$("#btnApp");b.classList.toggle("on",appOn);b.setAttribute("aria-pressed",appOn);b.textContent=appOn?"Ocultar APPs":"Mostrar APPs (faixa de 30 m)";drawMap()});
+document.querySelectorAll(".vtab[data-v]").forEach(b=>b.addEventListener("click",()=>{vista=b.dataset.v;sel=null;document.querySelectorAll(".vtab[data-v]").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});drawMap();detalhe();tabela()}));
 pfiBars();drawMap();fsc();pend();sim();siglar();
 new MutationObserver(()=>{clearTimeout(window._sg);window._sg=setTimeout(siglar,50)}).observe(document.body,{childList:true,subtree:true});
 </script>

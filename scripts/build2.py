@@ -20,6 +20,14 @@ d['uniao'] = {'polys': [[[ [round(x, 5), round(y, 5)] for x, y in [pl.exterior.c
               'perim_km': round(transform(_utm, _u).length / 1000, 1), 'partes': len(_polys),
               'furos': sum(len(pl.interiors) for pl in _polys), 'vertices': sum(len(pl.exterior.coords) - 1 for pl in _polys)}
 print('uniao', d['uniao']['perim_km'], d['uniao']['partes'], d['uniao']['furos'], d['uniao']['vertices'])
+
+from shapely.geometry import shape as _shape
+_hl = unary_union([_shape(h['geom']) for h in d['hidro']])
+_app = transform(pyproj.Transformer.from_crs(31981, 4674, always_xy=True).transform,
+                 transform(_utm, _hl).buffer(30, cap_style=2)).intersection(_u).simplify(0.00001)
+_pa = list(_app.geoms) if _app.geom_type == 'MultiPolygon' else [_app]
+d['app'] = [[[[round(x, 5), round(y, 5)] for x, y in pl.exterior.coords]] + [[[round(x, 5), round(y, 5)] for x, y in h.coords] for h in pl.interiors] for pl in _pa if pl.geom_type == 'Polygon']
+print('app ha (elip approx)', round(transform(pyproj.Transformer.from_crs(4674, 5880, always_xy=True).transform, _app).area / 1e4, 1))
 t = r('template2.html')
 t = t.replace('/*CSS*/', r('ref/style.css')).replace('/*LOGO1*/', r('logo1.txt').strip()).replace('/*LOGO2*/', r('logo2.txt').strip())
 t = t.replace('/*DATA*/', json.dumps(d, ensure_ascii=False, separators=(',', ':')))
