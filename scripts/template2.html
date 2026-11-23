@@ -11,12 +11,18 @@
 /*CSS*/
 /* ---- ajustes do painel ASPAFEMP ---- */
 svg#mapa{width:100%;height:auto;display:block;border-radius:12px;background:var(--sunk)}
-.lot{stroke:var(--ink);stroke-width:.0009;stroke-opacity:.75;cursor:pointer;transition:opacity .12s}
+.lot{stroke:var(--ink);stroke-width:1px;stroke-opacity:.75;cursor:pointer;transition:opacity .12s;vector-effect:non-scaling-stroke}
+#mapa path{vector-effect:non-scaling-stroke}
+#mapa{cursor:grab;touch-action:pan-y}
+#mapa.arrastando{cursor:grabbing}
+.zbtns{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:4}
+.zbtns button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--glass-strong);color:var(--ink);font:700 18px/1 var(--font-body);cursor:pointer}
+.zbtns button:hover{background:var(--sunk)}
 .lot:hover{opacity:.85}
-.lot:focus{outline:none;stroke:var(--accent);stroke-width:.003}
-.lot.sel{stroke:#d9480f;stroke-width:.0032}
+.lot:focus{outline:none;stroke:var(--accent);stroke-width:3px}
+.lot.sel{stroke:#d9480f;stroke-width:3px}
 .lotlbl{font:700 .0095px var(--font-body);fill:var(--ink);text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:var(--solid);stroke-width:.0022;stroke-linejoin:round}
-.hyd{fill:none;stroke:#2b73b8;stroke-width:.0006;stroke-linecap:round}
+.hyd{fill:none;stroke:#2b73b8;stroke-width:1px;stroke-linecap:round}
 .mapwrap{position:relative}
 #tip2{position:absolute;pointer-events:none;background:var(--ink);color:var(--solid);font-size:12.5px;padding:5px 9px;border-radius:7px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:3}
 .ctl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:12px;font-size:14px}
@@ -51,9 +57,9 @@ details.pr.done{border-color:var(--accent)}
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .vtab{font:600 14px var(--font-body);padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--glass-strong);color:var(--muted);cursor:pointer}
 .vtab.on{background:var(--accent);color:var(--solid);border-color:var(--accent)}
-.appz{fill:#e8590c;fill-opacity:.55;stroke:#c2410c;stroke-width:.0004;pointer-events:none}
+.appz{fill:#e8590c;fill-opacity:.55;stroke:#c2410c;stroke-width:.5px;pointer-events:none}
 .uni{fill:#cfe3d6;fill-opacity:.6;stroke:none}
-.uni-out{fill:none;stroke:var(--ink);stroke-width:.0022;stroke-linejoin:round;pointer-events:none}
+.uni-out{fill:none;stroke:var(--ink);stroke-width:2.5px;stroke-linejoin:round;pointer-events:none}
 .lot.nolin{stroke:none;cursor:default;pointer-events:none}
 .nowrap{white-space:nowrap}
 .gmap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
@@ -117,7 +123,8 @@ details.pr.done{border-color:var(--accent)}
     <div class="gmap">
       <div class="panel">
         <div class="tabs" role="tablist" aria-label="Vista do mapa"><button type="button" role="tab" class="vtab on" data-v="lotes" aria-selected="true">Lotes</button><button type="button" role="tab" class="vtab" data-v="total" aria-selected="false">Área total (lotes mesclados)</button></div>
-        <div class="mapwrap"><svg id="mapa" role="img" aria-label="Mapa dos lotes da ASPAFEMP"></svg><div id="tip2"></div></div>
+        <div class="mapwrap"><svg id="mapa" role="img" aria-label="Mapa dos lotes da ASPAFEMP"></svg><div class="zbtns"><button type="button" id="zmais" aria-label="Aproximar" title="Aproximar">+</button><button type="button" id="zmenos" aria-label="Afastar" title="Afastar">−</button><button type="button" id="ztudo" aria-label="Ver a área toda" title="Ver a área toda">⤢</button></div><div id="tip2"></div></div>
+        <p class="src" style="margin-top:8px">Aproxime com os botões ou com Ctrl + roda do mouse, arraste para mover e clique num lote para aproximar nele.</p>
         <div class="ctl">
           <label>Colorir por
             <select id="modo">
@@ -379,10 +386,23 @@ L.forEach(l=>{
 const TOT=L.reduce((s,l)=>s+l.area_ha,0), TOT_APP=L.reduce((s,l)=>s+l.app_ha,0), TOT_HID=L.reduce((s,l)=>s+l.hidro_km,0);
 const TOT_PFI=L.reduce((s,l)=>s+l.pfi_ha,0), CORE=TOT_PFI*PCT/100;
 let sel=null, sortKey="lote", sortDir=1, vista="lotes", appOn=false;
+let cur=null;
 
 /* mapa */
 const lat0=-3.9, kx=Math.cos(lat0*Math.PI/180), px=x=>x*kx, py=y=>-y, bb=DATA.bbox, mg=.045;
 const VB=[px(bb[0])-mg,py(bb[3])-mg,(px(bb[2])-px(bb[0]))+2*mg,(py(bb[1])-py(bb[3]))+2*mg];
+cur=VB.slice();
+const ASP=VB[2]/VB[3];
+function fitVB(x,y,w,h){ // keeps the map aspect ratio so the page height does not jump
+  let W=w,H=h; if(W/H<ASP) W=H*ASP; else H=W/ASP;
+  W=Math.min(W,VB[2]); H=W/ASP; // never wider than the full view
+  let X=x+w/2-W/2, Y=y+h/2-H/2;
+  X=Math.max(VB[0],Math.min(X,VB[0]+VB[2]-W)); Y=Math.max(VB[1],Math.min(Y,VB[1]+VB[3]-H));
+  return [X,Y,W,H];
+}
+function setView(v){cur=v;$("#mapa").setAttribute("viewBox",cur.join(" "))}
+function zoomBy(k,fx=.5,fy=.5){const [x,y,w,h]=cur;const nw=w/k,nh=h/k;setView(fitVB(x+(w-nw)*fx,y+(h-nh)*fy,nw,nh))}
+function zoomLot(id){const l=L.find(q=>q.lote===id);if(!l)return;const b=l.bbox;const x0=px(b[0]),x1=px(b[2]),y0=py(b[3]),y1=py(b[1]);const m=Math.max(x1-x0,y1-y0)*.18;setView(fitVB(x0-m,y0-m,x1-x0+2*m,y1-y0+2*m))}
 const rp=r=>"M"+r.map(c=>px(c[0]).toFixed(5)+","+py(c[1]).toFixed(5)).join("L")+"Z";
 function gp(g){
   if(g.type==="Polygon")return g.coordinates.map(rp).join("");
@@ -400,7 +420,7 @@ function colorFor(l){
   const v=L.map(metric),lo=Math.min(...v),hi=Math.max(...v); return scale(hi===lo?.5:(metric(l)-lo)/(hi-lo));
 }
 function drawMap(){
-  const svg=$("#mapa"); svg.setAttribute("viewBox",VB.join(" ")); let s="";
+  const svg=$("#mapa"); svg.setAttribute("viewBox",cur.join(" ")); let s="";
   if($("#chkZon").checked) s+=DATA.zoneamento.map(z=>`<path d="${gp(z.geom)}" fill="${ZCOR[z.zona]||"#ccc"}" fill-opacity=".55"/>`).join("");
   if($("#chkPfi").checked) s+=`<path d="${gp(DATA.pfi)}" fill="#0b5c73" fill-opacity=".32" stroke="#0b5c73" stroke-opacity=".5" stroke-width=".0008"/>`;
   const UD=DATA.uniao.polys.map(p=>p.map(rp).join("")).join("");
@@ -482,7 +502,7 @@ function detalhe(){
   <div style="margin-top:12px"><button class="seg" id="limpar" type="button" style="padding:7px 12px;font:600 14px var(--font-body);cursor:pointer;color:var(--muted)">Voltar à visão geral</button></div>`;
   $("#limpar").onclick=()=>select(null);
 }
-function select(id){sel=(id===sel?null:id);drawMap();detalhe();tabela()}
+function select(id){sel=(id===sel?null:id);if(sel&&vista==="lotes")zoomLot(sel);else setView(VB.slice());drawMap();detalhe();tabela()}
 
 /* tabela */
 function tabela(){
@@ -653,8 +673,16 @@ function siglar(){
 ["modo","chkPfi","chkZon","chkHid","chkLbl"].forEach(id=>$("#"+id).addEventListener("change",drawMap));
 $("#modo").addEventListener("change",()=>{if($("#modo").value==="zona"){$("#chkZon").checked=true;$("#chkPfi").checked=false;drawMap()}});
 ["ciclo","intens","infra","cons","ovl","dens"].forEach(id=>$("#"+id).addEventListener("input",sim));
+$("#zmais").onclick=()=>zoomBy(1.6);$("#zmenos").onclick=()=>zoomBy(1/1.6);$("#ztudo").onclick=()=>setView(VB.slice());
+(function(){const svg=$("#mapa");let drag=null,moved=false;
+  svg.addEventListener("wheel",e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();const r=svg.getBoundingClientRect();zoomBy(e.deltaY<0?1.25:1/1.25,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height)},{passive:false});
+  svg.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"||e.button!==0)return;drag={x:e.clientX,y:e.clientY,v:cur.slice()};moved=false});
+  window.addEventListener("pointermove",e=>{if(!drag)return;const r=svg.getBoundingClientRect(),dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4){moved=true;svg.classList.add("arrastando")}if(!moved)return;const [x,y,w,h]=drag.v;setView(fitVB(x-dx/r.width*w,y-dy/r.height*h,w,h))});
+  window.addEventListener("pointerup",()=>{drag=null;svg.classList.remove("arrastando")});
+  svg.addEventListener("click",e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
+})();
 $("#btnApp").addEventListener("click",()=>{appOn=!appOn;const b=$("#btnApp");b.classList.toggle("on",appOn);b.setAttribute("aria-pressed",appOn);b.textContent=appOn?"Ocultar APPs":"Mostrar APPs (faixa de 30 m)";drawMap()});
-document.querySelectorAll(".vtab[data-v]").forEach(b=>b.addEventListener("click",()=>{vista=b.dataset.v;sel=null;document.querySelectorAll(".vtab[data-v]").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});drawMap();detalhe();tabela()}));
+document.querySelectorAll(".vtab[data-v]").forEach(b=>b.addEventListener("click",()=>{vista=b.dataset.v;sel=null;setView(VB.slice());document.querySelectorAll(".vtab[data-v]").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});drawMap();detalhe();tabela()}));
 pfiBars();drawMap();fsc();pend();sim();siglar();
 new MutationObserver(()=>{clearTimeout(window._sg);window._sg=setTimeout(siglar,50)}).observe(document.body,{childList:true,subtree:true});
 </script>
