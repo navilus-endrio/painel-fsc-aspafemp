@@ -148,7 +148,7 @@ details.pr.done{border-color:var(--accent)}
       <p class="lede">A V2.1 exige proteger uma fração da PFI que cai dentro da Unidade de Manejo: o percentual da classe da paisagem vezes a área de PFI. Aqui, a classe é Apta (20%) em todos os lotes.</p>
     </header>
     <div class="grid3" style="margin-bottom:18px">
-      <div class="avc a1"><h3>Classe da paisagem</h3><p class="muted" style="margin-top:6px;font-size:15px"><b>Apta, 20%.</b> Os 10 lotes ficam inteiros na classe 2 do mapa de aptidão do Anexo H (vetorização usada no painel do Padrão FSC).</p></div>
+      <div class="avc a1"><h3>Classe da paisagem</h3><p class="muted" style="margin-top:6px;font-size:15px"><b>Apta, 20%.</b> Os 10 lotes ficam inteiros na classe 2 do mapa de aptidão do Anexo H, a 82 km da fronteira mais próxima entre classes (vetorização usada no painel do Padrão FSC).</p></div>
       <div class="avc a2"><h3>PFI nos lotes</h3><p class="muted" style="margin-top:6px;font-size:15px"><b>__PFI_HA__ ha</b> (__PFI_PCT__% da área), pelo IFL 2020. O Lote 06 é 100% PFI; o Lote 03 tem só __PFI03__%.</p></div>
       <div class="avc a3"><h3>Área central mínima</h3><p class="muted" style="margin-top:6px;font-size:15px"><b>__CORE_HA__ ha</b> (__CORE_PCT__% da área total), sem exploração e sem estradas. Pode ficar num único bloco, para reduzir fragmentação.</p></div>
     </div>
@@ -158,19 +158,6 @@ details.pr.done{border-color:var(--accent)}
       <div id="pfiBars" style="margin-top:14px"></div>
       <div class="req" style="margin-top:10px"><div class="pct" id="reqPct">20%</div><div class="txt"><b id="reqTxt"></b><small>Classe Apta: Foz do Amazonas, Negro, Purus, Tapajós, Araguaia, Gurupi, Madeira, Baixo Tocantins, Mearim, Xingu, Japurá e Javari/Juruá. Confirmar a paisagem com o shapefile oficial.</small></div></div>
       <p class="src">Indicador 9.2.4.1 (p. 56–57); Anexo H (p. 108–109).</p>
-    </div>
-    <div class="panel" style="margin-bottom:18px">
-      <h3>Anexo H aplicado à APAT de 20.000 ha</h3>
-      <p class="muted" style="margin-top:6px;font-size:15px">A pasta SHAPES tem três polígonos de APAT com 20.000 ha. Os três ficam 100% na classe Apta (20%); o que muda é quanto de cada um é PFI e, portanto, a área central mínima. O painel usa o contorno dos lotes.</p>
-      <div class="tbl-wrap" style="margin-top:12px"><table>
-        <thead><tr><th>Polígono</th><th>Classe (Anexo H)</th><th>PFI (ha)</th><th>PFI (% da área)</th><th>Área central mínima (ha)</th><th>Distância ao limite de outra classe</th></tr></thead>
-        <tbody>
-          <tr><td><b>Lotes (AREA_CONTORNO_LOTES)</b>, usado no painel</td><td>Apta, 20%</td><td>14.473</td><td>72,4%</td><td>2.895 (14,5%)</td><td>82 km</td></tr>
-          <tr><td>APAT_REDUZIDA_20000HA</td><td>Apta, 20%</td><td>13.168</td><td>65,8%</td><td>2.634 (13,2%)</td><td>78 km</td></tr>
-          <tr><td>APAT_20000HA e APAT_REDUZIDA_2 (mesma geometria)</td><td>Apta, 20%</td><td>19.360</td><td>96,8%</td><td>3.872 (19,4%)</td><td>104 km</td></tr>
-        </tbody>
-      </table></div>
-      <p class="src">Cálculo: interseção de cada polígono com as classes do Anexo H (p. 108–109) e com o IFL 2020; proporção em projeção policônica (EPSG:5880) aplicada à área elipsoidal (20.000,0 ha nos três). A distância é medida do polígono à borda mais próxima de outra classe, em UTM 21S. Vale a limitação da vetorização da figura do Anexo H (erro de cerca de 10 km): a distância mínima de 78 km é bem maior, então a classe Apta não depende desse erro. A PFI continua sendo aproximação pelo IFL 2020.</p>
     </div>
     <div class="grid2">
       <div class="panel">
