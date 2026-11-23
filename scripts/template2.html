@@ -23,8 +23,8 @@ svg#mapa{width:100%;height:auto;display:block;border-radius:12px;background:var(
 .lot.sel{stroke:#d9480f;stroke-width:3px}
 .lotlbl{font:700 .0095px var(--font-body);fill:var(--ink);text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:var(--solid);stroke-width:.0022;stroke-linejoin:round}
 .mass{fill:#7fb5e6;fill-opacity:.85;stroke:#2b73b8;stroke-width:.8px;pointer-events:none}
-.nasc{fill:none;stroke:#0b3d91;stroke-width:7px;stroke-linecap:round;pointer-events:none}
-.nascb{fill:none;stroke:#fff;stroke-width:10px;stroke-linecap:round;pointer-events:none}
+.nasc{fill:none;stroke:#0b3d91;stroke-width:4px;stroke-linecap:round;pointer-events:none}
+.nascb{fill:none;stroke:#fff;stroke-width:6px;stroke-linecap:round;pointer-events:none}
 .hyd{fill:none;stroke:#2b73b8;stroke-width:1px;stroke-linecap:round}
 .mapwrap{position:relative}
 #tip2{position:absolute;pointer-events:none;background:var(--ink);color:var(--solid);font-size:12.5px;padding:5px 9px;border-radius:7px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:3}
@@ -462,7 +462,7 @@ function legend(){
   if($("#chkZon").checked&&m!=="zona") h+=Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
   if(appOn) h+=`<span><i style="background:#e8590c;opacity:.7"></i>APP: shape APP’S_APAT_ASPAFEMP (${f(TOT_APP,0)} ha)</span>`;
   if($("#chkMas").checked) h+=`<span><i style="background:#7fb5e6;border:1px solid #2b73b8"></i>Massa d’água (${f(DATA.massas_ha,1)} ha)</span>`;
-  if($("#chkNas").checked) h+=`<span><i style="background:#0b3d91;border-radius:50%;width:10px;height:10px;border:2px solid #fff;box-shadow:0 0 0 1px #0b3d91"></i>Nascente (${DATA.nascentes.length})</span>`;
+  if($("#chkNas").checked) h+=`<span><i style="background:#0b3d91;border-radius:50%;width:7px;height:7px;border:1px solid #fff;box-shadow:0 0 0 1px #0b3d91"></i>Nascente (${DATA.nascentes.length})</span>`;
   if($("#chkHid").checked) h+=`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`;
   $("#legenda").innerHTML=h;
 }
