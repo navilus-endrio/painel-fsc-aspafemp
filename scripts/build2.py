@@ -21,13 +21,20 @@ d['uniao'] = {'polys': [[[ [round(x, 5), round(y, 5)] for x, y in [pl.exterior.c
               'furos': sum(len(pl.interiors) for pl in _polys), 'vertices': sum(len(pl.exterior.coords) - 1 for pl in _polys)}
 print('uniao', d['uniao']['perim_km'], d['uniao']['partes'], d['uniao']['furos'], d['uniao']['vertices'])
 
+import shapefile
 from shapely.geometry import shape as _shape
-_hl = unary_union([_shape(h['geom']) for h in d['hidro']])
-_app = transform(pyproj.Transformer.from_crs(31981, 4674, always_xy=True).transform,
-                 transform(_utm, _hl).buffer(30, cap_style=2)).intersection(_u).simplify(0.00001)
+_sf = shapefile.Reader(r"C:\Users\endrio\OneDrive\Documentos\1 Brandão Engenharia e Projetos\ASPAFEMP\SHAPES\HIDROGRAFIAS E APPS\APP'S_APAT_ASPAFEMP.shp")
+_ap = unary_union([_shape(s.__geo_interface__) for s in _sf.shapes()]).buffer(0)
+_to4674 = pyproj.Transformer.from_crs(31981, 4674, always_xy=True).transform
+_app = transform(_to4674, _ap).intersection(_u)
+_a5880 = pyproj.Transformer.from_crs(4674, 5880, always_xy=True).transform
+for l in L:
+    l['app_ha'] = round(transform(_a5880, _app.intersection(Polygon(l['ring']))).area / 1e4, 2)
+app = sum(l['app_ha'] for l in L)
+_app = _app.simplify(0.00001)
 _pa = list(_app.geoms) if _app.geom_type == 'MultiPolygon' else [_app]
 d['app'] = [[[[round(x, 5), round(y, 5)] for x, y in pl.exterior.coords]] + [[[round(x, 5), round(y, 5)] for x, y in h.coords] for h in pl.interiors] for pl in _pa if pl.geom_type == 'Polygon']
-print('app ha (elip approx)', round(transform(pyproj.Transformer.from_crs(4674, 5880, always_xy=True).transform, _app).area / 1e4, 1))
+print('app ha (shape oficial, recortada)', round(app, 1), [l['app_ha'] for l in L])
 t = r('template2.html')
 t = t.replace('/*CSS*/', r('ref/style.css')).replace('/*LOGO1*/', r('logo1.txt').strip()).replace('/*LOGO2*/', r('logo2.txt').strip())
 t = t.replace('/*DATA*/', json.dumps(d, ensure_ascii=False, separators=(',', ':')))

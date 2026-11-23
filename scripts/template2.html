@@ -100,7 +100,7 @@ details.pr.done{border-color:var(--accent)}
         <div class="kpi"><span class="v num">20.000 ha</span><span class="l">área dos 10 lotes (03 a 09, 12, 13 e 15)</span></div>
         <div class="kpi"><span class="v num">__PFI_PCT__%</span><span class="l">dos lotes em PFI (IFL 2020), __PFI_HA__ ha</span></div>
         <div class="kpi alert"><span class="v num">__CORE_HA__ ha</span><span class="l">área central mínima, 20% da PFI (paisagem apta)</span></div>
-        <div class="kpi"><span class="v num">__APP_HA__ ha</span><span class="l">APP estimada, __APP_PCT__% da área</span></div>
+        <div class="kpi"><span class="v num">__APP_HA__ ha</span><span class="l">APP, __APP_PCT__% da área</span></div>
       </div>
     </div>
     <div class="msgs">
@@ -118,7 +118,7 @@ details.pr.done{border-color:var(--accent)}
     <header>
       <div class="eyebrow">A área</div>
       <h2>Os 10 lotes</h2>
-      <p class="lede">Clique em um lote, no mapa ou na tabela, para ver área, APP estimada, PFI, zonas do zoneamento e alertas.</p>
+      <p class="lede">Clique em um lote, no mapa ou na tabela, para ver área, APP, PFI, zonas do zoneamento e alertas.</p>
     </header>
     <div class="gmap">
       <div class="panel">
@@ -130,7 +130,7 @@ details.pr.done{border-color:var(--accent)}
             <select id="modo">
               <option value="area">Área do lote</option>
               <option value="pfi">PFI (% do lote)</option>
-              <option value="app">APP estimada (% do lote)</option>
+              <option value="app">APP (% do lote)</option>
               <option value="comp">Compacidade da forma</option>
               <option value="zona">Zona dominante</option>
             </select>
@@ -138,7 +138,7 @@ details.pr.done{border-color:var(--accent)}
           <label><input type="checkbox" id="chkPfi" checked> PFI (IFL 2020)</label>
           <label><input type="checkbox" id="chkZon"> Zoneamento</label>
           <label><input type="checkbox" id="chkHid" checked> Hidrografia</label>
-          <button type="button" class="vtab" id="btnApp" aria-pressed="false">Mostrar APPs (faixa de 30 m)</button>
+          <label><input type="checkbox" id="chkApp"> APPs</label>
           <label><input type="checkbox" id="chkLbl" checked> Rótulos</label>
         </div>
         <div class="leg" id="legenda"></div>
@@ -149,9 +149,9 @@ details.pr.done{border-color:var(--accent)}
     </div>
     <div class="panel" style="margin-top:18px">
       <h3>Lotes em números</h3>
-      <p class="muted" style="margin-top:6px;font-size:15px">Clique no cabeçalho para ordenar. “Líquida” = área − APP estimada − infraestrutura do simulador.</p>
+      <p class="muted" style="margin-top:6px;font-size:15px">Clique no cabeçalho para ordenar. “Líquida” = área − APP − infraestrutura do simulador.</p>
       <div class="tbl-wrap" style="margin-top:12px"><table id="tabela"></table></div>
-      <p class="src">Áreas: atributos do shape (AREA_CONTORNO_LOTES), conferidos contra a área elipsoidal (soma 20.000,01 ha). APP: faixa de 30 m de cada lado dos cursos d’água de 0 a 10 m da hidrografia do IBGE (Lei 12.651/2012, art. 4º), sem nascentes.</p>
+      <p class="src">Áreas: atributos do shape (AREA_CONTORNO_LOTES), conferidos contra a área elipsoidal (soma 20.000,01 ha). APP: shape APP’S_APAT_ASPAFEMP (hidrografia, nascentes e massas d’água, Lei 12.651/2012, art. 4º), recortado nos lotes.</p>
     </div>
   </div>
 </section>
@@ -453,7 +453,7 @@ function legend(){
   if(vista==="total") h+=`<span><i style="background:none;border:2px solid var(--ink)"></i>Contorno da área total (${f(TOT,0)} ha)</span>`;
   if($("#chkPfi").checked) h+=`<span><i style="background:#0b5c73;opacity:.5"></i>PFI (IFL 2020)</span>`;
   if($("#chkZon").checked&&m!=="zona") h+=Object.keys(ZCOR).filter(z=>DATA.zoneamento.some(q=>q.zona===z)).map(z=>`<span><i style="background:${ZCOR[z]};opacity:.7"></i>${z}</span>`).join("");
-  if(appOn) h+=`<span><i style="background:#e8590c;opacity:.7"></i>APP: faixa de 30 m de cada lado (${f(TOT_APP,0)} ha, estimativa)</span>`;
+  if(appOn) h+=`<span><i style="background:#e8590c;opacity:.7"></i>APP: shape APP’S_APAT_ASPAFEMP (${f(TOT_APP,0)} ha)</span>`;
   if($("#chkHid").checked) h+=`<span><i style="background:#2b73b8;height:3px;vertical-align:3px"></i>Curso d’água (0–10 m)</span>`;
   $("#legenda").innerHTML=h;
 }
@@ -467,7 +467,7 @@ function detalhe(){
     el.innerHTML=`<h3>Área total</h3><p class="muted" style="margin-top:4px;font-size:14px">Os ${L.length} lotes mesclados num só polígono${U.partes>1?" ("+U.partes+" partes separadas)":""}.</p>
     <dl class="dl"><dt>Área</dt><dd>${f(TOT,2)} ha</dd><dt>Perímetro externo</dt><dd>${f(U.perim_km,1)} km</dd><dt>Vértices do contorno</dt><dd>${f(U.vertices,0)}</dd>
     <dt>PFI</dt><dd>${f(TOT_PFI,0)} ha (${f(TOT_PFI/TOT*100,1)}%)</dd><dt>Área central mínima</dt><dd>${f(CORE,0)} ha (${f(CORE/TOT*100,1)}%)</dd>
-    <dt>Cursos d’água</dt><dd>${f(TOT_HID,1)} km</dd><dt>APP estimada</dt><dd>${f(TOT_APP,0)} ha (${f(TOT_APP/TOT*100,1)}%)</dd>
+    <dt>Cursos d’água</dt><dd>${f(TOT_HID,1)} km</dd><dt>APP</dt><dd>${f(TOT_APP,0)} ha (${f(TOT_APP/TOT*100,1)}%)</dd>
     <dt>Compacidade</dt><dd>${f(4*Math.PI*TOT*1e4/Math.pow(U.perim_km*1000,2),2)}</dd></dl>
     <div class="sub2">Zonas do zoneamento</div><div class="zbar">${zs.map(([z,v])=>`<span title="${z}" style="width:${v/zsum*100}%;background:${ZCOR[z]||"#999"}"></span>`).join("")}</div>
     ${zs.map(([z,v])=>`<div class="zrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${ZCOR[z]||"#999"};margin-right:6px"></i>${z}</span><b>${f(v/zsum*100,v/zsum<.01?2:1)}%</b></div>`).join("")}
@@ -478,7 +478,7 @@ function detalhe(){
     el.innerHTML=`<h3>Visão geral</h3><p class="muted" style="margin-top:6px;font-size:15px">Selecione um lote no mapa.</p>
     <dl class="dl"><dt>Área total</dt><dd>${f(TOT,2)} ha</dd><dt>Área média por lote</dt><dd>${f(TOT/L.length,0)} ha</dd>
     <dt>PFI nos lotes</dt><dd>${f(TOT_PFI,0)} ha (${f(TOT_PFI/TOT*100,1)}%)</dd><dt>Área central mínima</dt><dd>${f(CORE,0)} ha</dd>
-    <dt>Cursos d’água</dt><dd>${f(TOT_HID,1)} km</dd><dt>APP estimada</dt><dd>${f(TOT_APP,0)} ha</dd></dl>
+    <dt>Cursos d’água</dt><dd>${f(TOT_HID,1)} km</dd><dt>APP</dt><dd>${f(TOT_APP,0)} ha</dd></dl>
     <div class="stack"><div class="callout" style="margin:0"><b>Contexto legal:</b> os lotes estão dentro da ${CTX.uc} (UC de uso sustentável), sob a CDRU 012/2022 SECT.</div>
     <div class="callout" style="margin:0;border-color:var(--no)"><b>Atenção:</b> o zoneamento coloca os lotes em Uso Extensivo, não em Manejo Florestal. Confirmar no plano de gestão se o manejo madeireiro é permitido nessa zona.</div></div>`;
     return;
@@ -494,7 +494,7 @@ function detalhe(){
   el.innerHTML=`<h3>${l.nome}</h3><p class="muted" style="margin-top:4px;font-size:14px">${l.vertices} vértices · centroide ${f(l.centroide[1],4)}, ${f(l.centroide[0],4)}</p>
   <dl class="dl"><dt>Área</dt><dd>${f(l.area_ha,2)} ha</dd><dt>Perímetro</dt><dd>${f(l.perim_m/1000,2)} km</dd>
   <dt>PFI</dt><dd>${f(l.pfi_ha,0)} ha (${f(l.pfiPct,0)}%)</dd><dt>Área central mínima</dt><dd>${f(l.core,0)} ha</dd>
-  <dt>Cursos d’água</dt><dd>${f(l.hidro_km,1)} km</dd><dt>APP estimada</dt><dd>${f(l.app_ha,1)} ha (${f(l.appPct,1)}%)</dd>
+  <dt>Cursos d’água</dt><dd>${f(l.hidro_km,1)} km</dd><dt>APP</dt><dd>${f(l.app_ha,1)} ha (${f(l.appPct,1)}%)</dd>
   <dt>Líquida (infra. ${f(infraPct(),1)}%)</dt><dd>${f(liq,0)} ha</dd><dt>Compacidade</dt><dd>${f(l.comp,2)}</dd></dl>
   <div class="sub2">Zonas do zoneamento</div><div class="zbar">${l.zlist.map(z=>`<span title="${z[0]}" style="width:${z[1]}%;background:${ZCOR[z[0]]||"#999"}"></span>`).join("")}</div>
   ${l.zlist.map(z=>`<div class="zrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${ZCOR[z[0]]||"#999"};margin-right:6px"></i>${z[0]}</span><b>${f(z[1],z[1]<1?2:1)}%</b></div>`).join("")}
@@ -613,7 +613,7 @@ const PR=[
  ["3","Direitos dos Povos Indígenas","6 critérios · pág. 30","verificar","Nenhuma terra indígena aparece nas bases da pasta.","Consulta à FUNAI sobre terras indígenas e povos isolados na região; identificação de povos afetados (3.1.1)."],
  ["4","Relações com a comunidade","8 critérios · pág. 34","atenção",CTX.com20+" comunidades a até 20 km; a mais próxima a "+f(CTX.comProx,1)+" km.","Identificação de comunidades e povos tradicionais (4.1.1), mapeamento de usos (castanha, caça, pesca, roças), reuniões registradas, mecanismo de queixas, acordos."],
  ["5","Benefícios da floresta","5 critérios · pág. 39","em andamento","O simulador dá a ordem de grandeza da produção anual.","Inventário a 100%, CAP por unidade de trabalho, viabilidade econômica, colheita abaixo da reposição (5.2.1 e 5.2.2)."],
- ["6","Valores e impactos ambientais","10 critérios · pág. 41","atenção","APP estimada em "+f(TOT_APP,0)+" ha ("+f(TOT_APP/TOT*100,1)+"%) e "+f(TOT_HID,0)+" km de cursos d’água.","Valores ambientais dentro e fora da UMF (6.1.1), mapa de APP e nascentes de campo, rede de áreas de conservação, fauna ameaçada, plano de resíduos."],
+ ["6","Valores e impactos ambientais","10 critérios · pág. 41","atenção","APP em "+f(TOT_APP,0)+" ha ("+f(TOT_APP/TOT*100,1)+"%) e "+f(TOT_HID,0)+" km de cursos d’água.","Valores ambientais dentro e fora da UMF (6.1.1), mapa de APP e nascentes de campo, rede de áreas de conservação, fauna ameaçada, plano de resíduos."],
  ["7","Planejamento do manejo","6 critérios · pág. 47","em andamento","UPFs de cerca de 600 ha no cenário padrão.","Plano com ações e procedimentos (7.2.1), metas verificáveis (7.3.1), resumo público do plano (7.5.1), cronograma do ciclo."],
  ["8","Monitoramento e avaliação","5 critérios · pág. 51","sem dado","Sem dado.","Procedimentos documentados (8.1.1), parcelas permanentes, análise de resultados (8.3.1), rastreamento do produto (8.5.1)."],
  ["9","Atributos de Alto Valor de Conservação 2.1","4 critérios · pág. 55","atenção",
@@ -646,7 +646,7 @@ function pend(){
    `<b>Posição da área central:</b> definir onde ficam os ${f(CORE,0)} ha, em bloco único se possível, ligados à rede de conservação (9.2.7). Os Lotes 06, 07 e 08 têm mais de 85% de PFI; o Lote 03 tem ${f(L.find(l=>l.lote==="03").pfiPct,0)}%.`,
    `<b>Lotes fora do recorte:</b> este recorte de 20.000 ha tem os lotes 03 a 09, 12, 13 e 15. Faltam ${miss.join(", ")} na faixa 03–15. O contorno original de 26.362 ha usava outra seleção (01–04 e 08–16), então a lista de lotes mudou entre as versões.`,
    `<b>Forma dos lotes:</b> ${long||"nenhum lote"} tem forma muito alongada (compacidade abaixo de 0,3). Rever a divisão em unidades de produção.`,
-   `<b>APP:</b> faixa de 30 m calculada sobre a hidrografia do IBGE. Nascentes (raio de 50 m) e igarapés pequenos fora da base exigem levantamento de campo e imagem de alta resolução.`,
+   `<b>APP:</b> shape APP’S_APAT_ASPAFEMP, fornecido pela Brandão. Igarapés pequenos fora da base exigem levantamento de campo e imagem de alta resolução.`,
    `<b>Comunidades:</b> nenhuma está dentro dos lotes, mas ${CTX.com20} ficam a até 20 km. O FSC pede identificação, diálogo e acordos documentados (Princípios 3 e 4). A camada de comunidades não traz número de famílias.`,
    `<b>Camada UPF_2000HA:</b> as 10 UPFs de 2.000 ha da pasta ficam ao sul e não se sobrepõem a nenhum destes lotes. Parece versão antiga; não entrou no painel.`,
    `<b>Dados que a pasta não tem:</b> inventário florestal, nascentes, avaliação de AVC, estradas e pátios existentes, uso atual do solo, vizinhos e sobreposições com CAR de terceiros.`
@@ -714,7 +714,7 @@ $("#zmais").onclick=()=>zoomBy(1.6);$("#zmenos").onclick=()=>zoomBy(1/1.6);$("#z
   window.addEventListener("pointerup",end);window.addEventListener("pointercancel",end);
   svg.addEventListener("click",e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
 })();
-$("#btnApp").addEventListener("click",()=>{appOn=!appOn;const b=$("#btnApp");b.classList.toggle("on",appOn);b.setAttribute("aria-pressed",appOn);b.textContent=appOn?"Ocultar APPs":"Mostrar APPs (faixa de 30 m)";drawMap()});
+$("#chkApp").addEventListener("change",e=>{appOn=e.target.checked;drawMap()});
 document.querySelectorAll(".vtab[data-v]").forEach(b=>b.addEventListener("click",()=>{vista=b.dataset.v;sel=null;setView(VB.slice());document.querySelectorAll(".vtab[data-v]").forEach(x=>{const on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-selected",on)});drawMap();detalhe();tabela()}));
 pfiBars();drawMap();fsc();pend();sim();siglar();
 new MutationObserver(()=>{clearTimeout(window._sg);window._sg=setTimeout(siglar,50)}).observe(document.body,{childList:true,subtree:true});
